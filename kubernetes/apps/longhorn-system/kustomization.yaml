@@ -6,4 +6,5 @@ namespace: longhorn-system
 components:
   - ../../components/sops
 resources:
+  - ./namespace.yaml
   - ./operator/ks.yaml
