@@ -9,4 +9,3 @@ resources:
   - ./helmrepository.yaml
   - ./httproute.yaml
   - ./storageclass.yaml
-  - ./settings
