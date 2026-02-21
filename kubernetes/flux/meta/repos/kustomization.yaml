@@ -5,5 +5,4 @@ kind: Kustomization
 resources:
   - ./authentik.yaml
   - ./cloudnative-pg.yaml
-  - ./external-dns.yaml
   - ./longhorn.yaml
