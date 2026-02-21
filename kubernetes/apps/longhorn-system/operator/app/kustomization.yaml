@@ -6,6 +6,7 @@ namespace: longhorn-system
 resources:
   - ./externalsecret.yaml
   - ./helmrelease.yaml
+  - ./helmrepository.yaml
   - ./httproute.yaml
   - ./storageclass.yaml
   - ./settings
