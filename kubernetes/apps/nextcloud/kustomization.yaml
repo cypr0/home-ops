@@ -7,5 +7,5 @@ components:
   - ../../components/sops
 
 resources:
-  - ./namespace.yaml
-  - ./nextcloud/ks.yaml
+ # - ./namespace.yaml
+ # - ./nextcloud/ks.yaml

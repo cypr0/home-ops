@@ -77,9 +77,9 @@ spec:
       createdb: false
       passwordSecret:
         name: paperless-db-credentials
-    - name: nextcloudusr
-      login: true
-      superuser: false
-      createdb: false
-      passwordSecret:
-        name: nextcloud-db-credentials
+#    - name: nextcloudusr
+#      login: true
+#      superuser: false
+#      createdb: false
+#      passwordSecret:
+#        name: nextcloud-db-credentials
