@@ -10,3 +10,4 @@ resources:
   - ./externalsecret.yaml
 
   - ./databases/authentik.yaml
+  - ./databases/paperless.yaml
