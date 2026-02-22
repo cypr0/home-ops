@@ -161,7 +161,7 @@ spec:
       securityContext:
         runAsUser: 82
         runAsGroup: 82
-        runAsNonRoot: true
+        runAsNonRoot: false
         readOnlyRootFilesystem: false
         fsGroup: 82
         fsGroupChangePolicy: OnRootMismatch
