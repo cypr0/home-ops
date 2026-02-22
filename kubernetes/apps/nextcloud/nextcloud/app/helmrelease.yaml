@@ -177,3 +177,23 @@ spec:
           runAsGroup: 82
     securityContext:
       fsGroupChangePolicy: OnRootMismatch
+    initContainers:
+      - name: volume-permissions
+        image: public.ecr.aws/docker/library/busybox:latest
+        command: ["sh", "-c"]
+        args:
+          - |
+            chmod -R 0770 /var/www/html/config
+            chmod -R 0770 /var/www/html/apps
+            chown -R 82:82 /var/www/html/config
+            chown -R 82:82 /var/www/html/apps
+            chown -R 82:82 /var/www/html
+            chmod -R 0770 /var/www/html/data
+            chown -R 82:82 /var/www/html/data
+        volumeMounts:
+          - name: nextcloud
+            mountPath: /var/www/html
+          - name: nextcloud-data
+            mountPath: /var/www/html/data
+        securityContext:
+          runAsUser: 0
