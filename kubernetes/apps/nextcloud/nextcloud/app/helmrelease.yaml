@@ -33,6 +33,8 @@ spec:
         runAsGroup: 82
         runAsNonRoot: true
         readOnlyRootFilesystem: false
+        fsGroup: 82
+        fsGroupChangePolicy: OnRootMismatch
       extraEnv:
         - name: REDIS_HOST
           value: dragonfly.database.svc.cluster.local
@@ -175,9 +177,6 @@ spec:
       sidecar:
         securityContext:
           runAsGroup: 82
-    securityContext:
-      fsGroupChangePolicy: OnRootMismatch
-      fsGroup: 82
     extraInitContainers:
       - name: volume-permissions
         image: public.ecr.aws/docker/library/alpine:latest
