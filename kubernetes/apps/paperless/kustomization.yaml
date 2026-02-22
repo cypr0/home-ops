@@ -9,5 +9,5 @@ components:
 resources:
   - ./namespace.yaml
   - ./gotenberg/ks.yaml
-  - ./paperless-ngx/ks.yaml
+ # - ./paperless-ngx/ks.yaml
   - ./tika/ks.yaml
