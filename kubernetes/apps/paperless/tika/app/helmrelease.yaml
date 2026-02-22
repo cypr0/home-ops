@@ -1,0 +1,57 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app tika
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: tika
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      tika:
+        replicas: 1
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: apache/tika
+              tag: 3.2.3.0-full
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+              runAsUser: 3000
+              runAsGroup: 3000
+              fsGroup: 3000
+              runAsNonRoot: true
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 9998
+    persistence:
+      tika-tmp:
+        enabled: true
+        type: emptyDir
+        advancedMounts:
+          tika:
+            app:
+              - path: /tmp

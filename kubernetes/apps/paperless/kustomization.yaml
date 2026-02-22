@@ -1,0 +1,13 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: paperless
+
+components:
+  - ../../components/sops
+
+resources:
+  - ./namespace.yaml
+  - ./gotenberg/ks.yaml
+  - ./paperless-ngx/ks.yaml
+  - ./tika/ks.yaml

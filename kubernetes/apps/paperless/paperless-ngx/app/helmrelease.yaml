@@ -1,0 +1,119 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app paperless-ngx
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: paperless-ngx
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      paperless-ngx:
+        replicas: 1
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+          secret.reloader.stakater.com/reload: "paperless-secret"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/paperless-ngx/paperless-ngx
+              tag: 2.20.8@sha256:e231ec11a1907bfdf172b4f120b4ef1994feb71e6cc624e8b88c53e2da3dfb62
+            env:
+              PAPERLESS_APPS: allauth.socialaccount.providers.openid_connect
+              PAPERLESS_CONSUMER_POLLING: 60
+              PAPERLESS_CONSUMER_RECURSIVE: "true"
+              PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
+              PAPERLESS_CONSUMPTION_DIR: /consume
+              PAPERLESS_DATA_DIR: /library/data
+              PAPERLESS_DISABLE_REGULAR_LOGIN: "true"
+              PAPERLESS_EXPORT_DIR: /library/export
+              PAPERLESS_LOGOUT_REDIRECT_URL: https://id.${SECRET_DOMAIN}/application/o/paperless-ngx/end-session/
+              PAPERLESS_MEDIA_ROOT: /library/media
+              PAPERLESS_OCR_LANGUAGE: deu+eng+spa
+              PAPERLESS_PORT: &port 80
+              PAPERLESS_REDIS: redis://:${DRAGONFLY_PASSWORD}@dragonfly.database.svc.cluster.local:6379
+              PAPERLESS_SOCIALACCOUNT_PROVIDERS: >
+                    {
+                      "openid_connect": {
+                        "APPS": [
+                          {
+                            "provider_id": "authentik",
+                            "name": "Authentik",
+                            "client_id": "${PAPERLESS_OPENID_CLIENT_ID}",
+                            "secret": "${PAPERLESS_OPENID_CLIENT_SECRET}",
+                            "settings": {
+                              "server_url": "https://id.${SECRET_DOMAIN}/application/o/paperless-ngx/.well-known/openid-configuration"
+                            }
+                          }
+                        ],
+                        "OAUTH_PKCE_ENABLED": "True",
+                        "SCOPE": ["openid", "profile", "email", "groups"]
+                      }
+                    }
+              PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS: "true"
+              PAPERLESS_TASK_WORKERS: 8
+              PAPERLESS_TIKA_ENABLED: 1
+              PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg.paperless.svc.cluster.local:3030
+              PAPERLESS_TIKA_ENDPOINT: http://tika.paperless.svc.cluster.local:9998
+              PAPERLESS_TIME_ZONE: ${TIMEZONE}
+              PAPERLESS_TRUSTED_PROXIES: 10.43.0.0/16,10.69.0.0/16,192.168.0.0/16
+              PAPERLESS_URL: https://paperless.${SECRET_DOMAIN}
+              USERMAP_UID: 3000
+              USERMAP_GID: 3000
+            envFrom:
+              - secretRef:
+                  name: paperless-secret
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames:
+          - paperless.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - name: *app
+                port: *port
+    persistence:
+      library:
+        enabled: true
+        existingClaim: paperless-data-pvc
+        advancedMounts:
+          paperless-ngx:
+            app:
+              - path: /library
+      consume:
+        enabled: true
+        existingClaim: paperless-consume-pvc
+        advancedMounts:
+          paperless-ngx:
+            app:
+              - path: /consume
