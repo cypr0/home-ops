@@ -11,3 +11,4 @@ resources:
 
   - ./databases/authentik.yaml
   - ./databases/paperless.yaml
+  - ./databases/nextcloud.yaml
