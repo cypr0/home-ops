@@ -27,6 +27,24 @@ spec:
     phpClientHttpsFix:
       enabled: true
     nextcloud:
+      extraInitContainers:
+        - name: volume-permissions
+          image: public.ecr.aws/docker/library/alpine:latest
+          command: ["sh"]
+          args:
+            - -c
+            - |
+              chmod -R 0770 /var/www/html
+              chmod -R 0770 /var/www/html/data
+              chown -R 82:82 /var/www/html
+              chown -R 82:82 /var/www/html/data
+          volumeMounts:
+            - name: nextcloud
+              mountPath: /var/www/html
+            - name: nextcloud-data
+              mountPath: /var/www/html/data
+          securityContext:
+            runAsUser: 0
       host: cloud.${SECRET_DOMAIN}
       securityContext:
         runAsUser: 82
@@ -177,21 +195,3 @@ spec:
       sidecar:
         securityContext:
           runAsGroup: 82
-    extraInitContainers:
-      - name: volume-permissions
-        image: public.ecr.aws/docker/library/alpine:latest
-        command: ["sh"]
-        args:
-          - -c
-          - |
-            chmod -R 0770 /var/www/html
-            chmod -R 0770 /var/www/html/data
-            chown -R 82:82 /var/www/html
-            chown -R 82:82 /var/www/html/data
-        volumeMounts:
-          - name: nextcloud
-            mountPath: /var/www/html
-          - name: nextcloud-data
-            mountPath: /var/www/html/data
-        securityContext:
-          runAsUser: 0
