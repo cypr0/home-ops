@@ -71,3 +71,9 @@ spec:
       createdb: false
       passwordSecret:
         name: authentik-db-credentials
+    - name: paperlessusr
+      login: true
+      superuser: false
+      createdb: false
+      passwordSecret:
+        name: paperless-db-credentials
