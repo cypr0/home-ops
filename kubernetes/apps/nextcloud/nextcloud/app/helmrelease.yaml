@@ -27,28 +27,7 @@ spec:
     phpClientHttpsFix:
       enabled: true
     nextcloud:
-      extraInitContainers:
-        - name: volume-permissions
-          image: public.ecr.aws/docker/library/alpine:latest
-          command: ["sh"]
-          args:
-            - -c
-            - |
-              chmod -R 0770 /var/www/html
-              chown -R 82:82 /var/www/html
-          volumeMounts:
-            - name: nextcloud
-              mountPath: /var/www/html
-          securityContext:
-            runAsUser: 0
       host: cloud.${SECRET_DOMAIN}
-      securityContext:
-        runAsUser: 82
-        runAsGroup: 82
-        runAsNonRoot: true
-        readOnlyRootFilesystem: false
-        fsGroup: 82
-        fsGroupChangePolicy: OnRootMismatch
       extraEnv:
         - name: REDIS_HOST
           value: dragonfly.database.svc.cluster.local
