@@ -12,7 +12,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nextcvloud-pvc
+  name: nextcloud-pvc
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn-basic
