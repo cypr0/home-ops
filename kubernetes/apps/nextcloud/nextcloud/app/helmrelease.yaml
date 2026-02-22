@@ -38,11 +38,10 @@ spec:
               chmod -R 0770 /var/www/html/data
               chown -R 82:82 /var/www/html
               chown -R 82:82 /var/www/html/data
-
           volumeMounts:
-            - name: nextcloud
+            - name: nextcloud-pvc
               mountPath: /var/www/html
-            - name: nextcloud-data
+            - name: nextcloud-data-pvc
               mountPath: /var/www/html/data
           securityContext:
             runAsUser: 0
