@@ -104,6 +104,8 @@ spec:
           max_input_time = 3600
           max_execution_time = 3600
     persistence:
+      enabled: true
+      existingClaim: nextcloud-pvc
       nextcloudData:
         enabled: true
         existingClaim: nextcloud-data-pvc
