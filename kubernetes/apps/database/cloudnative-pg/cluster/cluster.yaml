@@ -65,7 +65,7 @@ spec:
     enablePodMonitor: true
   managed:
     roles:
-    - name: authentik
+    - name: authentikusr
       login: true
       superuser: false
       createdb: false
