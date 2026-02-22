@@ -63,3 +63,11 @@ spec:
       memory: 2Gi
   monitoring:
     enablePodMonitor: true
+  managed:
+    roles:
+    - name: authentik
+      login: true
+      superuser: false
+      createdb: false
+      passwordSecret:
+        name: authentik-db-credentials
