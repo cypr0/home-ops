@@ -7,7 +7,7 @@ metadata:
 spec:
   description: Central postgresql cluster
   # renovate: datasource=docker depName=ghcr.io/tensorchord/vchord-postgres
-  imageName: ghcr.io/tensorchord/vchord-postgres:pg18-v1.1.0
+  imageName: ghcr.io/tensorchord/vchord-postgres@sha256:5d2ab53767dfc951e05ffd11e77c2ca282449cf2f3d553aedba7a960dfd5daff
   instances: 3
   affinity:
     enablePodAntiAffinity: true #default value
