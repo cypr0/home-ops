@@ -1,0 +1,11 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: cloudnative-pg
+spec:
+  interval: 30m
+  timeout: 3m
+  url: oci://ghcr.io/cloudnative-pg/charts/cloudnative-pg
+  ref:
+    tag: 0.27.1
