@@ -8,13 +8,13 @@ spec:
   description: Central postgresql cluster
   # renovate: datasource=docker depName=ghcr.io/tensorchord/vchord-postgres
   imageName: ghcr.io/tensorchord/cloudnative-vectorchord:18@sha256:3fa14ceb397deb111d5f051b8db4b47b9626c2e6f2f2f1c380326704f7a8156b
-  instances: 1
-  #affinity:
-  #  enablePodAntiAffinity: true #default value
-  #  topologyKey: kubernetes.io/hostname #default value
-  #  podAntiAffinityType: required #default value
+  instances: 3
+  affinity:
+    enablePodAntiAffinity: true #default value
+    topologyKey: kubernetes.io/hostname #default value
+    podAntiAffinityType: required #default value
   storage:
-    size: 50Gi
+    size: 25Gi
     storageClass: longhorn-basic
     resizeInUseVolumes: true
   postgresql:
@@ -60,7 +60,6 @@ spec:
     requests:
       cpu: 500m
     limits:
-      hugepages-2Mi: 1Gi
       memory: 2Gi
   monitoring:
     enablePodMonitor: true
