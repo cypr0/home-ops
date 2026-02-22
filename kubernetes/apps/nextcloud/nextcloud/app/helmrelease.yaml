@@ -34,13 +34,9 @@ spec:
           args:
             - -c
             - |
-              chmod -R 0770 /var/www/html
               chmod -R 0770 /var/www/html/data
-              chown -R 82:82 /var/www/html
               chown -R 82:82 /var/www/html/data
           volumeMounts:
-            - name: nextcloud
-              mountPath: /var/www/html
             - name: nextcloud-data
               mountPath: /var/www/html/data
           securityContext:
