@@ -34,11 +34,11 @@ spec:
           args:
             - -c
             - |
-              chmod -R 0770 /var/www/html/data
-              chown -R 82:82 /var/www/html/data
+              chmod -R 0770 /var/www/html
+              chown -R 82:82 /var/www/html
           volumeMounts:
-            - name: nextcloud-data
-              mountPath: /var/www/html/data
+            - name: nextcloud
+              mountPath: /var/www/html
           securityContext:
             runAsUser: 0
       host: cloud.${SECRET_DOMAIN}
@@ -159,12 +159,7 @@ spec:
       config:
         default: true
       securityContext:
-        runAsUser: 82
         runAsGroup: 82
-        runAsNonRoot: false
-        readOnlyRootFilesystem: false
-        fsGroup: 82
-        fsGroupChangePolicy: OnRootMismatch
       resources:
         requests:
           cpu: 50m
