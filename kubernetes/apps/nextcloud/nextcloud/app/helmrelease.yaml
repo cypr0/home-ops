@@ -30,10 +30,20 @@ spec:
       extraInitContainers:
         - name: fix-data-permissions
           image: busybox:1.37.0-uclibc
-          command: ["sh", "-c", "chmod -R 750 /var/www/html/data && echo 'Permissions fixed'"]
+          command:
+            - sh
+            - -c
+            - |
+              echo "Fixing Nextcloud permissions..."
+              chown -R 82:82 /var/www/html/data
+              chmod -R 750 /var/www/html/data
+              chown -R 82:82 /var/www/html
+              echo "Done"
           volumeMounts:
             - name: nextcloud-data
               mountPath: /var/www/html/data
+            - name: nextcloud
+              mountPath: /var/www/html
       host: cloud.${SECRET_DOMAIN}
       securityContext:
         runAsUser: 82
