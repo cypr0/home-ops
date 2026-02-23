@@ -28,6 +28,13 @@ spec:
       enabled: true
     nextcloud:
       host: cloud.${SECRET_DOMAIN}
+      securityContext:
+        runAsUser: 82
+        runAsGroup: 82
+        runAsNonRoot: true
+        readOnlyRootFilesystem: false
+        fsGroup: 82
+        fsGroupChangePolicy: OnRootMismatch
       extraEnv:
         - name: REDIS_HOST
           value: dragonfly.database.svc.cluster.local
@@ -134,11 +141,16 @@ spec:
     nginx:
       enabled: true
       image:
-        repository: public.ecr.aws/nginx/nginx
+        repository: public.ecr.aws/nginx/nginx-unprivileged
       config:
         default: true
       securityContext:
+        runAsUser: 82
         runAsGroup: 82
+        runAsNonRoot: true
+        readOnlyRootFilesystem: false
+        fsGroup: 82
+        fsGroupChangePolicy: OnRootMismatch
       resources:
         requests:
           cpu: 50m
