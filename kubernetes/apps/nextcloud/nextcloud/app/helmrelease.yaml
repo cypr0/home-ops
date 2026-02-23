@@ -77,16 +77,127 @@ spec:
         local.config.php: |-
           <?php
           $CONFIG = array(
-            'trusted_proxies' => array(
-              '127.0.0.1',
-              '10.0.0.0/8',
-            ),
-            'forwarded_for_headers' => array('HTTP_X_FORWARDED_FOR'),
-            'default_phone_region' => 'DE',
-            'auth.bruteforce.protection.enabled' => true,
-            'maintenance_window_start' => 1,
-            'simpleSignUpLink.shown' => false,
-          );
+                'backgroundjobs_mode' => 'cron',
+                'activity_expire_days' => 14,
+                'allow_local_remote_servers' => true,
+                'auth.bruteforce.protection.enabled' => true,
+                'overwriteprotocol' => 'https',
+                'overwrite.cli.url' => 'https://cloud.${SECRET_DOMAIN}',
+                'trusted_domains' => array(
+                    0 => 'localhost',
+                    1 => 'cloud.${SECRET_DOMAIN}',
+                    2 => 'id.${SECRET_DOMAIN}',
+                    3 => 'collabora.nextcloud.svc.cluster.local',
+                ),
+                'trusted_proxies' => array(
+                    0 => '127.0.0.1',
+                    1 => '10.0.0.0/8',
+                    2 => '172.16.0.0/12',
+                    3 => '192.168.0.0/16',
+                ),
+                'forwarded_for_headers' => array(
+                  0 => 'HTTP_X_FORWARDED_FOR',
+                ),
+
+                'forbidden_filenames' =>
+                  array (
+                    0 => '.htaccess',
+                    1 => 'Thumbs.db',
+                    2 => 'thumbs.db',
+                    ),
+
+                'appstoreenabled' => true,
+                'knowledgebaseenabled' => false,
+                'quota_include_external_storage' => false,
+                'share_folder' => '/Freigaben',
+                'skeletondirectory' => '',
+                'trashbin_retention_obligation' => 'auto, 7',
+
+                'log_type' => 'file',
+                'logfile' => '/var/log/nextcloud.log',
+                'loglevel' => 0,
+
+                'memcache.local' => '\OC\Memcache\APCu',
+                'memcache.distributed' => '\OC\Memcache\Redis',
+                'memcache.locking' => '\OC\Memcache\Redis',
+                'redis' => array(
+                  'host' => getenv('REDIS_HOST'),
+                  'port' => getenv('REDIS_HOST_PORT') ?: 6379,
+                  'password' => getenv('REDIS_HOST_PASSWORD'),
+                  'dbindex'       => 8,
+                  'timeout'       => 1.5,
+                  'read_timeout'  => 1.5,
+                ),
+
+                'apps_paths' => array(
+                    0 => array (
+                            'path'     => OC::$SERVERROOT.'/apps',
+                            'url'      => '/apps',
+                            'writable' => false,
+                    ),
+                    1 => array (
+                            'path'     => OC::$SERVERROOT.'/custom_apps',
+                            'url'      => '/custom_apps',
+                            'writable' => true,
+                    ),
+                ),
+
+                'htaccess.RewriteBase' => '/',
+
+                'mail_smtpmode' => 'smtp',
+                'mail_smtptimeout' => 30,
+                'mail_sendmailmode' => 'smtp',
+                'mail_smtphost' => getenv('SMTP_HOST'),
+                'mail_smtpport' => 25,
+                'mail_smtpsecure' => '',
+                'mail_smtpauth' => false,
+                'mail_smtpauthtype' => '',
+                'mail_smtppassword' => getenv('SMTP_PASSWORD'),
+                'mail_smtpname' => getenv('SMTP_NAME'),
+                'mail_from_address' => getenv('MAIL_FROM_ADDRESS'),
+                'mail_domain' => getenv('MAIL_DOMAIN'),
+                "mail_smtptimeout"  => 30,
+                'mail_smtpstreamoptions' => array (
+                  'ssl' => array (
+                    'allow_self_signed' => true,
+                    'verify_peer' => false,
+                    'verify_peer_name' => false
+                    ),
+                  ),
+
+                'enable_previews' => true,
+                'enabledPreviewProviders' =>
+                    array (
+                  0 => 'OC\\Preview\\PNG',
+                  1 => 'OC\\Preview\\JPEG',
+                  2 => 'OC\\Preview\\GIF',
+                  3 => 'OC\\Preview\\BMP',
+                  4 => 'OC\\Preview\\XBitmap',
+                  5 => 'OC\\Preview\\Movie',
+                  6 => 'OC\\Preview\\PDF',
+                  7 => 'OC\\Preview\\MP3',
+                  8 => 'OC\\Preview\\TXT',
+                  9 => 'OC\\Preview\\MarkDown',
+                  10 => 'OC\\Preview\\HEIC',
+                  11 => 'OC\\Preview\\MKV',
+                  12 => 'OC\\Preview\\MP4',
+                  13 => 'OC\\Preview\\AVI',
+                  ),
+                'preview_max_x' => 1024,
+                'preview_max_y' => 768,
+                'preview_max_scale_factor' => 1,
+
+                  // Circumvention for client freezes - https://github.com/nextcloud/desktop/issues/5094
+                'bulkupload.enabled' => false,
+
+                'backgroundjobs_mode' => 'webcron',
+                'default_language' => 'de',
+                'default_locale' => 'de_DE',
+                'default_phone_region' => 'DE',
+                'default_timezone' => 'Europe/Berlin',
+                'maintenance_window_start' => 1,
+
+              );
         redis.config.php: |-
           <?php
           $CONFIG = array(
