@@ -25,6 +25,8 @@ spec:
   uninstall:
     keepHistory: false
   values:
+    annotations:
+      secret.reloader.stakater.com/reload: longhorn-system-secret
     persistence:
       defaultClass: false
       reclaimPolicy: Delete
