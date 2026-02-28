@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-job-config-postinstall
+spec:
+  template:
+    spec:
+      ttlSecondsAfterFinished: 3600
+      securityContext:
+        runAsUser: 82
+        runAsGroup: 82
+        fsGroup: 82
+      containers:
+      - name: nextcloud-job-config-postinstall
+        image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
+        command: ["/bin/sh", "-c"]
+        args: ["sleep 600; until php /var/www/html/occ status --output json | grep -q '\"installed\":true'; do sleep 10; done && php /var/www/html/occ upgrade && php /var/www/html/occ db:add-missing-indices && php /var/www/html/occ db:add-missing-columns && php /var/www/html/occ db:add-missing-primary-keys && php /var/www/html/occ db:convert-filecache-bigint && php /var/www/html/occ maintenance:repair --include-expensive"]
+        volumeMounts:
+        - name: app-config
+          mountPath: /var/www/html
+          subPath: config
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
+      restartPolicy: OnFailure
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: nextcloud-data-pvc
+      - name: app-config
+        persistentVolumeClaim:
+          claimName: nextcloud-pvc

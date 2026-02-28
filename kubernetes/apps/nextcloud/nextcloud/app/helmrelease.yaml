@@ -24,22 +24,11 @@ spec:
       registry: public.ecr.aws
       repository: docker/library/nextcloud
       flavor: fpm-alpine
+      tag: 32.0.6
     phpClientHttpsFix:
       enabled: true
     nextcloud:
       extraInitContainers:
-      #  - name: fix-core-permissions
-      #    image: busybox:1.37.0-uclibc
-      #    command:
-      #      - sh
-      #      - -c
-      #      - |
-      #        echo "Fixing Nextcloud permissions..."
-      #        chown -R 82:82 /var/www/html
-      #        echo "Done!"
-      #    volumeMounts:
-      #      - name: nextcloud-pvc
-      #        mountPath: /var/www/html
         - name: fix-data-permissions
           image: busybox:1.37.0-uclibc
           command:
