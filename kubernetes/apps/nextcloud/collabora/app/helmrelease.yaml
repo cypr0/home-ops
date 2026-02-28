@@ -65,7 +65,7 @@ spec:
           http:
             port: 8010
     route:
-      collabora:
+      app:
         hostnames:
           - office.${SECRET_DOMAIN}
         parentRefs:
