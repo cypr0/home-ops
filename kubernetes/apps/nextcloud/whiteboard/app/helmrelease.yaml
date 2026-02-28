@@ -34,12 +34,12 @@ spec:
               - name: JWT_SECRET_KEY
                 valueFrom:
                   secretKeyRef:
-                    name: nextcloud-secret
+                    name: whiteboard-secret
                     key: WHITEBOARD_JWT_SECRET_KEY
               - name: STORAGE_STRATEGY
                 value: "redis"
               - name: REDIS_URL
-                value: "redis://:${DRAGONFLY_PASSWORD}@dragonfly.database.svc.cluster.local:6379/9"
+                value: "redis://:${DRAGONFLY_PASSWORD}@dragonfly.database.svc.cluster.local:6379/3"
             securityContext:
               runAsUser: 65534
               runAsGroup: 65534
