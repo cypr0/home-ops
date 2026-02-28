@@ -69,10 +69,6 @@ spec:
         data:
           config.yaml: |-
             ingress:
-              - hostname: office.${SECRET_DOMAIN}
-                originRequest:
-                  http2Origin: false
-                service: http://collabora-app.nextcloud.svc.cluster.local:9980
               - hostname: "*.${SECRET_DOMAIN}"
                 originRequest:
                   http2Origin: true

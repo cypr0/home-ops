@@ -69,15 +69,3 @@ spec:
         ports:
           http:
             port: 8010
-    route:
-      app:
-        hostnames:
-          - office.${SECRET_DOMAIN}
-        parentRefs:
-          - name: envoy-external
-            namespace: network
-            sectionName: https
-        rules:
-          - backendRefs:
-              - name: collabora-app
-                port: 9980
