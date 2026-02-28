@@ -112,6 +112,7 @@ spec:
                 'allow_local_remote_servers' => true,
                 'auth.bruteforce.protection.enabled' => true,
                 'overwriteprotocol' => 'https',
+                'overwritehost' => 'cloud.${SECRET_DOMAIN}',
                 'overwrite.cli.url' => 'https://cloud.${SECRET_DOMAIN}',
                 'trusted_domains' => array(
                     0 => 'localhost',
