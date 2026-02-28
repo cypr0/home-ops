@@ -181,7 +181,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-oidc-v3
+  name: nextcloud-job-config-oidc-v4
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -255,7 +255,7 @@ spec:
             --clientsecret="${OIDC_CLIENT_SECRET}" \
             --discoveryuri="https://id.${SECRET_DOMAIN}/application/o/nextcloud/.well-known/openid-configuration" \
             --endsessionendpointuri="https://id.${SECRET_DOMAIN}/application/o/nextcloud/end-session/" \
-            --scope="email profile" \
+            --scope="openid email profile nextcloud" \
             --unique-uid="0" \
             --mapping-uid="user_id" \
             --mapping-display-name="name" \
