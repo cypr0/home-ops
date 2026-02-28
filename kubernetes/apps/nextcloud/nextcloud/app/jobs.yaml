@@ -20,16 +20,35 @@ spec:
         - |
           set -eu
           timeout=1800
-          elapsed=0
-          until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
-            sleep 10
-            elapsed=$((elapsed + 10))
-            if [ "$elapsed" -ge "$timeout" ]; then
-              echo "Timed out waiting for Nextcloud to report installed=true"
-              exit 1
-            fi
-          done
+
+          wait_installed_and_ready() {
+            elapsed=0
+            until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for Nextcloud to report installed=true"
+                exit 1
+              fi
+            done
+
+            elapsed=0
+            until php /var/www/html/occ status --output json | grep -q '"maintenance":false'; do
+              echo "Waiting for maintenance mode to be disabled..."
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for maintenance mode to be disabled"
+                exit 1
+              fi
+            done
+          }
+
+          wait_installed_and_ready
+
           php /var/www/html/occ upgrade --no-interaction
+          wait_installed_and_ready
+
           php /var/www/html/occ db:add-missing-indices --no-interaction
           php /var/www/html/occ db:add-missing-columns --no-interaction
           php /var/www/html/occ db:add-missing-primary-keys --no-interaction
@@ -79,26 +98,57 @@ spec:
         - |
           set -eu
           timeout=7200
-          elapsed=0
-          until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
-            sleep 10
-            elapsed=$((elapsed + 10))
-            if [ "$elapsed" -ge "$timeout" ]; then
-              echo "Timed out waiting for Nextcloud to report installed=true"
-              exit 1
-            fi
-          done
+
+          wait_installed_and_ready() {
+            elapsed=0
+            until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for Nextcloud to report installed=true"
+                exit 1
+              fi
+            done
+
+            elapsed=0
+            until php /var/www/html/occ status --output json | grep -q '"maintenance":false'; do
+              echo "Waiting for maintenance mode to be disabled..."
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for maintenance mode to be disabled"
+                exit 1
+              fi
+            done
+          }
+
+          is_enabled() {
+            php /var/www/html/occ app:list | sed -n '/Enabled:/,/Disabled:/p' | grep -q -- "- $1:"
+          }
+
+          is_installed() {
+            php /var/www/html/occ app:list | grep -q -- "- $1:"
+          }
+
+          wait_installed_and_ready
 
           php /var/www/html/occ app:disable firstrunwizard --no-interaction || true
           php /var/www/html/occ app:disable support --no-interaction || true
 
           php /var/www/html/occ app:enable admin_audit --no-interaction
           php /var/www/html/occ app:enable files_pdfviewer --no-interaction
-          php /var/www/html/occ app:enable groupfolders --no-interaction
 
-          for app in appointments polls richdocuments files_antivirus whiteboard deck tables forms quota_warning user_oidc files_retention integration_openai assistant; do
-            php /var/www/html/occ app:install "$app" --no-interaction || true
-            php /var/www/html/occ app:enable "$app" --no-interaction || true
+          for app in groupfolders appointments polls richdocuments files_antivirus whiteboard deck tables forms quota_warning user_oidc files_retention integration_openai assistant; do
+            wait_installed_and_ready
+            if ! is_installed "$app"; then
+              php /var/www/html/occ app:install "$app" --no-interaction
+            fi
+            php /var/www/html/occ app:enable "$app" --no-interaction
+
+            if ! is_enabled "$app"; then
+              echo "App '$app' is not enabled after installation attempt"
+              exit 1
+            fi
           done
         volumeMounts:
         - name: app-main
@@ -155,19 +205,35 @@ spec:
         - |
           set -eu
           timeout=7200
-          elapsed=0
-          until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
-            echo "Waiting for Nextcloud installation..."
-            sleep 10
-            elapsed=$((elapsed + 10))
-            if [ "$elapsed" -ge "$timeout" ]; then
-              echo "Timed out waiting for Nextcloud installation"
-              exit 1
-            fi
-          done
+
+          wait_installed_and_ready() {
+            elapsed=0
+            until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
+              echo "Waiting for Nextcloud installation..."
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for Nextcloud installation"
+                exit 1
+              fi
+            done
+
+            elapsed=0
+            until php /var/www/html/occ status --output json | grep -q '"maintenance":false'; do
+              echo "Waiting for maintenance mode to be disabled..."
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for maintenance mode to be disabled"
+                exit 1
+              fi
+            done
+          }
+
+          wait_installed_and_ready
 
           elapsed=0
-          until php /var/www/html/occ app:list | grep -q 'user_oidc'; do
+          until php /var/www/html/occ app:list | sed -n '/Enabled:/,/Disabled:/p' | grep -q -- '- user_oidc:'; do
             echo "Waiting for user_oidc app to be installed..."
             sleep 10
             elapsed=$((elapsed + 10))
@@ -179,8 +245,8 @@ spec:
 
           echo "Configuring user_oidc provider..."
           php /var/www/html/occ user_oidc:provider Authentik \
-            --clientid="${OPENID_CLIENT_ID}" \
-            --clientsecret="${OPENID_CLIENT_SECRET}" \
+            --clientid="${OIDC_CLIENT_ID}" \
+            --clientsecret="${OIDC_CLIENT_SECRET}" \
             --discoveryuri="https://id.${SECRET_DOMAIN}/application/o/nextcloud/.well-known/openid-configuration" \
             --endsessionendpointuri="https://id.${SECRET_DOMAIN}/application/o/nextcloud/end-session/" \
             --scope="email profile" \
