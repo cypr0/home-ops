@@ -10,3 +10,4 @@ resources:
   - ./namespace.yaml
   - ./collabora/ks.yaml
   - ./nextcloud/ks.yaml
+  - ./whiteboard/ks.yaml
