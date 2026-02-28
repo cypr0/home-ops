@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-postinstall-v2
+  name: nextcloud-job-config-postinstall-v3
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -64,6 +64,9 @@ spec:
         - name: app-main
           mountPath: /var/www/html/config
           subPath: config
+        - name: app-main
+          mountPath: /var/www/html/custom_apps
+          subPath: custom_apps
         - name: data
           mountPath: /var/www/html/data
           subPath: data
@@ -79,7 +82,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-addapps-v2
+  name: nextcloud-job-config-addapps-v3
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -160,6 +163,9 @@ spec:
         - name: app-main
           mountPath: /var/www/html/config
           subPath: config
+        - name: app-main
+          mountPath: /var/www/html/custom_apps
+          subPath: custom_apps
         - name: data
           mountPath: /var/www/html/data
           subPath: data
@@ -175,7 +181,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-oidc-v2
+  name: nextcloud-job-config-oidc-v3
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -272,6 +278,9 @@ spec:
         - name: app-main
           mountPath: /var/www/html/config
           subPath: config
+        - name: app-main
+          mountPath: /var/www/html/custom_apps
+          subPath: custom_apps
         - name: data
           mountPath: /var/www/html/data
           subPath: data
