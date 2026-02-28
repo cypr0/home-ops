@@ -9,6 +9,9 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
+  dependsOn:
+    - name: nextcloud
+      namespace: nextcloud
   interval: 1h
   path: ./kubernetes/apps/nextcloud/collabora/app
   prune: true
