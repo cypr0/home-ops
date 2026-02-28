@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-postinstall
+  name: nextcloud-job-config-postinstall-v2
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -79,7 +79,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-addapps
+  name: nextcloud-job-config-addapps-v2
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -175,7 +175,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-oidc
+  name: nextcloud-job-config-oidc-v2
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
