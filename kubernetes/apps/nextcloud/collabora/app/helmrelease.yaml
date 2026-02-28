@@ -45,6 +45,10 @@ spec:
                 value: "de_DE en_GB en_US es_ES fr_FR"
               - name: server_name
                 value: "office.${SECRET_DOMAIN}"
+              - name: domain
+                value: "cloud\\.${SECRET_DOMAIN}"
+              - name: aliasgroup1
+                value: "https://cloud.${SECRET_DOMAIN}:443"
             securityContext:
               runAsUser: 1001
               runAsGroup: 1001
