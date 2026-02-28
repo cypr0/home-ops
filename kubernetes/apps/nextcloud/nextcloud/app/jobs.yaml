@@ -3,9 +3,11 @@ kind: Job
 metadata:
   name: nextcloud-job-config-postinstall
 spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 2
+  activeDeadlineSeconds: 7200
   template:
     spec:
-      ttlSecondsAfterFinished: 3600
       securityContext:
         runAsUser: 82
         runAsGroup: 82
@@ -13,8 +15,26 @@ spec:
       containers:
       - name: nextcloud-job-config-postinstall
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
-        command: ["/bin/sh", "-c"]
-        args: ["sleep 600; until php /var/www/html/occ status --output json | grep -q '\"installed\":true'; do sleep 10; done && php /var/www/html/occ upgrade && php /var/www/html/occ db:add-missing-indices && php /var/www/html/occ db:add-missing-columns && php /var/www/html/occ db:add-missing-primary-keys && php /var/www/html/occ db:convert-filecache-bigint && php /var/www/html/occ maintenance:repair --include-expensive"]
+        command: ["/bin/sh", "-ec"]
+        args:
+        - |
+          set -eu
+          timeout=1800
+          elapsed=0
+          until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
+            sleep 10
+            elapsed=$((elapsed + 10))
+            if [ "$elapsed" -ge "$timeout" ]; then
+              echo "Timed out waiting for Nextcloud to report installed=true"
+              exit 1
+            fi
+          done
+          php /var/www/html/occ upgrade --no-interaction
+          php /var/www/html/occ db:add-missing-indices --no-interaction
+          php /var/www/html/occ db:add-missing-columns --no-interaction
+          php /var/www/html/occ db:add-missing-primary-keys --no-interaction
+          php /var/www/html/occ db:convert-filecache-bigint --no-interaction
+          php /var/www/html/occ maintenance:repair --include-expensive --no-interaction
         volumeMounts:
         - name: app-config
           mountPath: /var/www/html

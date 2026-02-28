@@ -8,5 +8,5 @@ resources:
   - ./helmrelease.yaml
   - ./helmrepository.yaml
   - ./httproute.yaml
- # - ./jobs.yaml
+  - ./jobs.yaml
   - ./pvc.yaml
