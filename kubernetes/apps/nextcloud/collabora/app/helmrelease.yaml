@@ -1,0 +1,78 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app collabora
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: *app
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      collabora:
+        replicas: 1
+        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: collabora/code
+              tag: 25.04.8.1.1@sha256:3c58d0e9bae75e4647467d0c7d91cb66f261d3e814709aed590b5c334a04db26
+            env:
+              - name: username
+                valueFrom:
+                  secretKeyRef:
+                    name: collabora-secret
+                    key: COLLABORA_USERNAME
+              - name: password
+                valueFrom:
+                  secretKeyRef:
+                    name: collabora-secret
+                    key: COLLABORA_PASSWORD
+              - name: extra_params
+                value: "--o:ssl.termination=true --o:ssl.enable=false --o:welcome.enable=false --o:languagetool.enabled=true --o:languagetool.base_url=http://collabora-languagetool.nextcloud.svc.cluster.local:8010/v2 --o:net.proxy_allowed_hosts=192.168.0.0/16,10.0.0.0/8,cloud.${SECRET_DOMAIN} --o:admin_console.enable=false"
+              - name: dictionaries
+                value: "de_DE en_GB en_US es_ES fr_FR"
+              - name: server_name
+                value: "office.${SECRET_DOMAIN}"
+            securityContext:
+              runAsUser: 1001
+              runAsGroup: 1001
+              fsGroup: 1001
+          languagetool:
+            image:
+              repository: collabora/languagetool
+              tag: 6.6@sha256:a93a2470a49c28e36b0e3b73f4562dab21a532ad10819ddc50bf69f80e98240d
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: 9980
+      languagetool:
+        controller: *app
+        ports:
+          http:
+            port: 8010
+    route:
+      collabora:
+        hostnames:
+          - office.${SECRET_DOMAIN}
+        parentRefs:
+          - name: external
+            namespace: kube-system
+            sectionName: https
+        rules:
+          - backendRefs:
+              - name: *app
+                port: 9980
