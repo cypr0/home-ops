@@ -36,8 +36,14 @@ spec:
           php /var/www/html/occ db:convert-filecache-bigint --no-interaction
           php /var/www/html/occ maintenance:repair --include-expensive --no-interaction
         volumeMounts:
-        - name: app-config
+        - name: app-main
+          mountPath: /var/www
+          subPath: root
+        - name: app-main
           mountPath: /var/www/html
+          subPath: html
+        - name: app-main
+          mountPath: /var/www/html/config
           subPath: config
         - name: data
           mountPath: /var/www/html/data
@@ -47,6 +53,6 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: nextcloud-data-pvc
-      - name: app-config
+      - name: app-main
         persistentVolumeClaim:
           claimName: nextcloud-pvc
