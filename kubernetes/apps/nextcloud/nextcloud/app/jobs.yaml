@@ -121,3 +121,99 @@ spec:
       - name: app-main
         persistentVolumeClaim:
           claimName: nextcloud-pvc
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-job-config-oidc
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 2
+  activeDeadlineSeconds: 10800
+  template:
+    spec:
+      securityContext:
+        runAsUser: 82
+        runAsGroup: 82
+        fsGroup: 82
+      containers:
+      - name: nextcloud-job-config-oidc
+        image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
+        env:
+        - name: OIDC_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-secret
+              key: OIDC_CLIENT_ID
+        - name: OIDC_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: nextcloud-secret
+              key: OIDC_CLIENT_SECRET
+        command: ["/bin/sh", "-ec"]
+        args:
+        - |
+          set -eu
+          timeout=7200
+          elapsed=0
+          until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
+            echo "Waiting for Nextcloud installation..."
+            sleep 10
+            elapsed=$((elapsed + 10))
+            if [ "$elapsed" -ge "$timeout" ]; then
+              echo "Timed out waiting for Nextcloud installation"
+              exit 1
+            fi
+          done
+
+          elapsed=0
+          until php /var/www/html/occ app:list | grep -q 'user_oidc'; do
+            echo "Waiting for user_oidc app to be installed..."
+            sleep 10
+            elapsed=$((elapsed + 10))
+            if [ "$elapsed" -ge "$timeout" ]; then
+              echo "Timed out waiting for user_oidc app"
+              exit 1
+            fi
+          done
+
+          echo "Configuring user_oidc provider..."
+          php /var/www/html/occ user_oidc:provider Authentik \
+            --clientid="${OPENID_CLIENT_ID}" \
+            --clientsecret="${OPENID_CLIENT_SECRET}" \
+            --discoveryuri="https://id.${SECRET_DOMAIN}/application/o/nextcloud/.well-known/openid-configuration" \
+            --endsessionendpointuri="https://id.${SECRET_DOMAIN}/application/o/nextcloud/end-session/" \
+            --scope="email profile" \
+            --unique-uid="0" \
+            --mapping-uid="user_id" \
+            --mapping-display-name="name" \
+            --mapping-email="email" \
+            --mapping-quota="quota" \
+            --mapping-avatar="avatar" \
+            --group-provisioning="1" \
+            --mapping-groups="groups"
+          echo "Successfully configured user_oidc provider."
+          echo "Making the OIDC provider the default login method..."
+          php /var/www/html/occ config:app:set --value=0 user_oidc allow_multiple_user_backends
+          echo "Completely finished user_oidc configuration."
+        volumeMounts:
+        - name: app-main
+          mountPath: /var/www
+          subPath: root
+        - name: app-main
+          mountPath: /var/www/html
+          subPath: html
+        - name: app-main
+          mountPath: /var/www/html/config
+          subPath: config
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
+      restartPolicy: OnFailure
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: nextcloud-data-pvc
+      - name: app-main
+        persistentVolumeClaim:
+          claimName: nextcloud-pvc
