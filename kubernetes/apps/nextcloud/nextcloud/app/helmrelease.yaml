@@ -24,7 +24,7 @@ spec:
       registry: public.ecr.aws
       repository: docker/library/nextcloud
       flavor: fpm-alpine
-      tag: 32.0.6
+      tag: 32.0.6-fpm-alpine
     phpClientHttpsFix:
       enabled: true
     nextcloud:
