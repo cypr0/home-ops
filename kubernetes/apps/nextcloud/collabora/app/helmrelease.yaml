@@ -44,7 +44,7 @@ spec:
               - name: dictionaries
                 value: "de_DE en_GB en_US es_ES fr_FR"
               - name: server_name
-                value: "office.${SECRET_DOMAIN}"
+                value: "collabora-app.nextcloud.svc.cluster.local"
               - name: domain
                 value: "cloud\\.${SECRET_DOMAIN}"
               - name: aliasgroup1
