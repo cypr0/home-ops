@@ -87,7 +87,22 @@ spec:
           port: 25
           secure: ''
       defaultConfigs:
+        apache-pretty-urls.config.php: false
+        apcu.config.php: false
+        apps.config.php: false
         redis.config.php: false
+        reverse-proxy.config.php: false
+        s3.config.php: false
+        smtp.config.php: false
+        swift.config.php: false
+        upgrade-disable-web.config.php: false
+      hooks:
+        before-starting: |-
+          #!/bin/sh
+          set -eu
+          for f in apache-pretty-urls.config.php apcu.config.php apps.config.php redis.config.php reverse-proxy.config.php s3.config.php smtp.config.php swift.config.php upgrade-disable-web.config.php; do
+            rm -f "/var/www/html/config/$f"
+          done
       configs:
         local.config.php: |-
           <?php
@@ -213,18 +228,6 @@ spec:
                 'maintenance_window_start' => 1,
 
               );
-        redis.config.php: |-
-          <?php
-          $CONFIG = array(
-            'memcache.distributed' => '\OC\Memcache\Redis',
-            'memcache.locking' => '\OC\Memcache\Redis',
-            'redis' => array(
-              'host' => getenv('NEXTCLOUD_REDIS_HOST'),
-              'port' => getenv('NEXTCLOUD_REDIS_PORT') ?: 6379,
-              'dbindex' => getenv('NEXTCLOUD_REDIS_DATABASE') ?: 0,
-              'password' => getenv('NEXTCLOUD_REDIS_PASSWORD'),
-            ),
-          );
       phpConfigs:
         uploadLimit.ini: |
           upload_max_filesize = 16G
