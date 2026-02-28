@@ -59,6 +59,7 @@ spec:
         ports:
           http:
             port: 9980
+            appProtocol: http
       languagetool:
         controller: *app
         ports:
