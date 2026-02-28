@@ -72,8 +72,7 @@ spec:
               - hostname: office.${SECRET_DOMAIN}
                 originRequest:
                   http2Origin: false
-                  originServerName: external.${SECRET_DOMAIN}
-                service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
+                service: http://collabora-app.nextcloud.svc.cluster.local:9980
               - hostname: "*.${SECRET_DOMAIN}"
                 originRequest:
                   http2Origin: true
