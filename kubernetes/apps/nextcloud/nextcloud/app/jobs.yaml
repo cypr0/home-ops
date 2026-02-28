@@ -56,3 +56,68 @@ spec:
       - name: app-main
         persistentVolumeClaim:
           claimName: nextcloud-pvc
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-job-config-addapps
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 2
+  activeDeadlineSeconds: 10800
+  template:
+    spec:
+      securityContext:
+        runAsUser: 82
+        runAsGroup: 82
+        fsGroup: 82
+      containers:
+      - name: nextcloud-job-config-addapps
+        image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
+        command: ["/bin/sh", "-ec"]
+        args:
+        - |
+          set -eu
+          timeout=7200
+          elapsed=0
+          until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
+            sleep 10
+            elapsed=$((elapsed + 10))
+            if [ "$elapsed" -ge "$timeout" ]; then
+              echo "Timed out waiting for Nextcloud to report installed=true"
+              exit 1
+            fi
+          done
+
+          php /var/www/html/occ app:disable firstrunwizard --no-interaction || true
+          php /var/www/html/occ app:disable support --no-interaction || true
+
+          php /var/www/html/occ app:enable admin_audit --no-interaction
+          php /var/www/html/occ app:enable files_pdfviewer --no-interaction
+          php /var/www/html/occ app:enable groupfolders --no-interaction
+
+          for app in appointments polls richdocuments files_antivirus whiteboard deck tables forms quota_warning user_oidc files_retention integration_openai assistant; do
+            php /var/www/html/occ app:install "$app" --no-interaction || true
+            php /var/www/html/occ app:enable "$app" --no-interaction || true
+          done
+        volumeMounts:
+        - name: app-main
+          mountPath: /var/www
+          subPath: root
+        - name: app-main
+          mountPath: /var/www/html
+          subPath: html
+        - name: app-main
+          mountPath: /var/www/html/config
+          subPath: config
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
+      restartPolicy: OnFailure
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: nextcloud-data-pvc
+      - name: app-main
+        persistentVolumeClaim:
+          claimName: nextcloud-pvc
