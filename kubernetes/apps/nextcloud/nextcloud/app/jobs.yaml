@@ -181,7 +181,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-oidc-v5
+  name: nextcloud-job-config-oidc-v6
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -195,17 +195,6 @@ spec:
       containers:
       - name: nextcloud-job-config-oidc
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
-        env:
-        - name: OIDC_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: nextcloud-secret
-              key: OIDC_CLIENT_ID
-        - name: OIDC_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: nextcloud-secret
-              key: OIDC_CLIENT_SECRET
         command: ["/bin/sh", "-ec"]
         args:
         - |
@@ -251,8 +240,8 @@ spec:
 
           echo "Configuring user_oidc provider..."
           php /var/www/html/occ user_oidc:provider Authentik \
-            --clientid="${OIDC_CLIENT_ID}" \
-            --clientsecret="${OIDC_CLIENT_SECRET}" \
+            --clientid="${NEXTCLOUD_OIDC_CLIENT_ID}" \
+            --clientsecret="${NEXTCLOUD_OIDC_CLIENT_SECRET}" \
             --discoveryuri="https://id.${SECRET_DOMAIN}/application/o/nextcloud/.well-known/openid-configuration" \
             --endsessionendpointuri="https://id.${SECRET_DOMAIN}/application/o/nextcloud/end-session/" \
             --scope="openid email profile nextcloud" \
