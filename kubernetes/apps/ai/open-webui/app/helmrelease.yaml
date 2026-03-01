@@ -59,7 +59,7 @@ spec:
               OAUTH_MERGE_ACCOUNTS_BY_EMAIL: false
               OPENID_PROVIDER_URL: https://id.${SECRET_DOMAIN}/application/o/open-webui/.well-known/openid-configuration
               OPENID_REDIRECT_URI: https://gpt.${SECRET_DOMAIN}/oauth/oidc/callback
-              OAUTH_SCOPES: openid email profile
+              OAUTH_SCOPES: openid email profile openwebui
               OAUTH_UPDATE_PICTURE_ON_LOGIN: true
               ENABLE_OAUTH_GROUP_MANAGEMENT: true
               OAUTH_GROUP_CLAIM: groups
