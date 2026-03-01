@@ -419,10 +419,34 @@ spec:
             done
           }
 
-          wait_enabled_app() {
+          is_installed() {
+            php /var/www/html/occ app:list | grep -q -- "- $1:"
+          }
+
+          is_enabled() {
+            php /var/www/html/occ app:list | sed -n '/Enabled:/,/Disabled:/p' | grep -q -- "- $1:"
+          }
+
+          ensure_app_enabled() {
             app="$1"
             elapsed=0
-            until php /var/www/html/occ app:list | sed -n '/Enabled:/,/Disabled:/p' | grep -q -- "- ${app}:"; do
+            while true; do
+              wait_installed_and_ready
+
+              if ! is_installed "$app"; then
+                echo "Installing ${app} app..."
+                php /var/www/html/occ app:install "$app" --no-interaction || true
+              fi
+
+              if ! is_enabled "$app"; then
+                echo "Enabling ${app} app..."
+                php /var/www/html/occ app:enable "$app" --no-interaction || true
+              fi
+
+              if is_enabled "$app"; then
+                break
+              fi
+
               echo "Waiting for ${app} app to be enabled..."
               sleep 10
               elapsed=$((elapsed + 10))
@@ -442,13 +466,13 @@ spec:
           }
 
           wait_installed_and_ready
-          wait_enabled_app integration_openai
-          wait_enabled_app assistant
+          ensure_app_enabled integration_openai
+          ensure_app_enabled assistant
 
           echo "Configuring integration_openai..."
           set_if_non_empty url "https://openrouter.ai/api/v1"
           set_if_non_empty service_name "OpenRouter"
-          set_if_non_empty api_key "${OPENROUTER_NEXTCLOUD_API_SECRET}""
+          set_if_non_empty api_key "${OPENROUTER_NEXTCLOUD_API_SECRET}"
 
           set_if_non_empty default_completion_model_id "openai/gpt-5.2-chat"
 
