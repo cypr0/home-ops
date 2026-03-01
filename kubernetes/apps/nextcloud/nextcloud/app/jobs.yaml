@@ -375,6 +375,112 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
+  name: nextcloud-job-config-ai-v1
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 2
+  activeDeadlineSeconds: 10800
+  template:
+    spec:
+      securityContext:
+        runAsUser: 82
+        runAsGroup: 82
+        fsGroup: 82
+      containers:
+      - name: nextcloud-job-config-ai
+        image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
+        command: ["/bin/sh", "-ec"]
+        args:
+        - |
+          set -eu
+          timeout=7200
+
+          wait_installed_and_ready() {
+            elapsed=0
+            until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
+              echo "Waiting for Nextcloud installation..."
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for Nextcloud installation"
+                exit 1
+              fi
+            done
+
+            elapsed=0
+            until php /var/www/html/occ status --output json | grep -q '"maintenance":false'; do
+              echo "Waiting for maintenance mode to be disabled..."
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for maintenance mode to be disabled"
+                exit 1
+              fi
+            done
+          }
+
+          wait_enabled_app() {
+            app="$1"
+            elapsed=0
+            until php /var/www/html/occ app:list | sed -n '/Enabled:/,/Disabled:/p' | grep -q -- "- ${app}:"; do
+              echo "Waiting for ${app} app to be enabled..."
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for ${app} app"
+                exit 1
+              fi
+            done
+          }
+
+          set_if_non_empty() {
+            key="$1"
+            value="$2"
+            if [ -n "$value" ]; then
+              php /var/www/html/occ config:app:set integration_openai "$key" --value="$value"
+            fi
+          }
+
+          wait_installed_and_ready
+          wait_enabled_app integration_openai
+          wait_enabled_app assistant
+
+          echo "Configuring integration_openai..."
+          set_if_non_empty url "https://openrouter.ai/api/v1"
+          set_if_non_empty service_name "OpenRouter"
+          set_if_non_empty api_key "${OPENROUTER_NEXTCLOUD_API_SECRET}""
+
+          set_if_non_empty default_completion_model_id "openai/gpt-5.2-chat"
+
+          echo "AI configuration completed."
+        volumeMounts:
+        - name: app-main
+          mountPath: /var/www
+          subPath: root
+        - name: app-main
+          mountPath: /var/www/html
+          subPath: html
+        - name: app-main
+          mountPath: /var/www/html/config
+          subPath: config
+        - name: app-main
+          mountPath: /var/www/html/custom_apps
+          subPath: custom_apps
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
+      restartPolicy: OnFailure
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: nextcloud-data-pvc
+      - name: app-main
+        persistentVolumeClaim:
+          claimName: nextcloud-pvc
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
   name: nextcloud-job-config-whiteboard
 spec:
   ttlSecondsAfterFinished: 3600
