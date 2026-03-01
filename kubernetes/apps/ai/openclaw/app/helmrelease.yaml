@@ -41,6 +41,9 @@ spec:
               - /bin/sh
               - -ec
               - |
+                node openclaw.mjs config set gateway.auth.mode token
+                node openclaw.mjs config set gateway.auth.token "$OPENCLAW_GATEWAY_TOKEN"
+                node openclaw.mjs config set gateway.remote.token "$OPENCLAW_GATEWAY_TOKEN"
                 node openclaw.mjs config set gateway.controlUi.allowedOrigins '["https://claw.${SECRET_DOMAIN}"]' --strict-json
                 exec node openclaw.mjs gateway --allow-unconfigured --bind lan --port 18789
             env:
