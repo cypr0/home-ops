@@ -47,8 +47,6 @@ spec:
                 value: "office.${SECRET_DOMAIN}"
               - name: domain
                 value: "cloud\\.${SECRET_DOMAIN}"
-              - name: aliasgroup1
-                value: "https://cloud.${SECRET_DOMAIN}:443"
             securityContext:
               runAsUser: 1001
               runAsGroup: 1001
