@@ -21,6 +21,9 @@ spec:
       openclaw:
         replicas: 1
         strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+          secret.reloader.stakater.com/reload: "openclaw-secret"
         containers:
           app:
             image:
@@ -29,12 +32,18 @@ spec:
             env:
               PORT: &port 3000
               TZ: ${TIMEZONE}
+              OPENCLAW_STATE_DIR: /data/.openclaw
+              OPENCLAW_WORKSPACE_DIR: /data/workspace
+              NODE_OPTIONS: --max-old-space-size=2048
+            envFrom:
+              - secretRef:
+                  name: openclaw-secret
             resources:
               requests:
                 cpu: 100m
-                memory: 256Mi
-              limits:
                 memory: 1Gi
+              limits:
+                memory: 3Gi
 
     service:
       app:
@@ -55,3 +64,13 @@ spec:
           - backendRefs:
               - name: *app
                 port: *port
+
+    persistence:
+      data:
+        enabled: true
+        existingClaim: openclaw-pvc
+        advancedMounts:
+          openclaw:
+            app:
+              - path: /data
+                subPath: data
