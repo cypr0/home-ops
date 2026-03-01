@@ -38,14 +38,11 @@ spec:
               repository: ghcr.io/openclaw/openclaw
               tag: 2026.2.26
             command:
-              - node
-              - openclaw.mjs
-              - gateway
-              - --allow-unconfigured
-              - --bind
-              - lan
-              - --port
-              - "18789"
+              - /bin/sh
+              - -ec
+              - |
+                node openclaw.mjs config set gateway.controlUi.allowedOrigins '["https://claw.${SECRET_DOMAIN}"]' --strict-json
+                exec node openclaw.mjs gateway --allow-unconfigured --bind lan --port 18789
             env:
               PORT: &port 18789
               TZ: ${TIMEZONE}
