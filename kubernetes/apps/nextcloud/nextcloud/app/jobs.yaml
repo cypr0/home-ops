@@ -552,9 +552,9 @@ spec:
           ensure_app_enabled assistant
 
           echo "Configuring integration_openai..."
-          set_if_non_empty url "https://openrouter.ai/api/v1"
-          set_if_non_empty service_name "OpenRouter"
-          set_if_non_empty api_key "${OPENROUTER_NEXTCLOUD_API_SECRET}"
+          set_if_non_empty url "https://gpt.${SECRET_DOMAIN}/api/v1"
+          set_if_non_empty service_name "Open WebUI"
+          set_if_non_empty api_key "${OPENWEBUI_NEXTCLOUD_API_KEY}"
 
           set_if_non_empty default_completion_model_id "openai/gpt-5.2-chat"
 

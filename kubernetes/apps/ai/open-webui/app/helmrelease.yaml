@@ -1,0 +1,117 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: &app open-webui
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: *app
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    controllers:
+      open-webui:
+        replicas: 1
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+          secret.reloader.stakater.com/reload: "open-webui-secret"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/open-webui/open-webui
+              tag: 0.6.43@sha256:9cb724e0bc84f05ba2f81a3da5f53f5add07e1001065d83f3b6b70b9a9eeef19
+            env:
+              CORS_ALLOW_ORIGIN: https://gpt.${SECRET_DOMAIN}
+              WEBUI_URL: https://gpt.${SECRET_DOMAIN}
+              PORT: &webuiPort 8090
+              ENABLE_SIGNUP: false
+              ENABLE_OAUTH_SIGNUP: true
+              ENABLE_LOGIN_FORM: false
+              DEFAULT_LOCALE: de
+              DEFAULT_USER_ROLE: user
+              DATA_DIR: /data
+              ENV: prod
+              TZ: ${TIMEZONE}
+              ENABLE_DIRECT_CONNECTIONS: false
+
+              ENABLE_OLLAMA_API: false
+              OPENAI_API_BASE_URL: https://openrouter.ai/api/v1
+
+              ENABLE_WEB_SEARCH: true
+              ENABLE_SEARCH_QUERY_GENERATION: true
+              WEB_SEARCH_RESULT_COUNT: 5
+              WEB_SEARCH_ENGINE: google_pse
+
+              ENABLE_WEBSOCKET_SUPPORT: "true"
+              WEBSOCKET_MANAGER: redis
+              REDIS_URL: redis://:${DRAGONFLY_PASSWORD}@dragonfly.database.svc.cluster.local:6379/4
+
+              OAUTH_PROVIDER_NAME: Authentik
+              OAUTH_MERGE_ACCOUNTS_BY_EMAIL: false
+              OPENID_PROVIDER_URL: https://id.${SECRET_DOMAIN}/application/o/open-webui/.well-known/openid-configuration
+              OPENID_REDIRECT_URI: https://gpt.${SECRET_DOMAIN}/oauth/oidc/callback
+              OAUTH_SCOPES: openid email profile
+              OAUTH_UPDATE_PICTURE_ON_LOGIN: true
+              ENABLE_OAUTH_GROUP_MANAGEMENT: true
+              OAUTH_GROUP_CLAIM: groups
+              ENABLE_OAUTH_GROUP_CREATION: true
+
+              VECTOR_DB: pgvector
+              PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH: 1536
+              PGVECTOR_CREATE_EXTENSION: false
+              PGVECTOR_INDEX_METHOD: hnsw
+              PGVECTOR_HNSW_M: 16
+              PGVECTOR_HNSW_EF_CONSTRUCTION: 64
+              CONTENT_EXTRACTION_ENGINE: tika
+              TIKA_SERVER_URL: http://tika.paperless.svc.cluster.local:9998
+
+              ENABLE_API_KEY: true
+              JWT_EXPIRES_IN: 8h
+            envFrom:
+              - secretRef:
+                  name: open-webui-secret
+            resources:
+              requests:
+                cpu: 500m
+                memory: 1Gi
+              limits:
+                memory: 4Gi
+
+    service:
+      app:
+        controller: *app
+        ports:
+          http:
+            port: *webuiPort
+
+    route:
+      app:
+        hostnames:
+          - gpt.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - name: *app
+                port: *webuiPort
+
+    persistence:
+      data:
+        enabled: true
+        existingClaim: open-webui-pvc
+        advancedMounts:
+          open-webui:
+            app:
+              - path: /data
+                subPath: data
