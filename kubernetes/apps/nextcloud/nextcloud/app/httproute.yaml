@@ -11,6 +11,14 @@ spec:
       namespace: network
       sectionName: https
   rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /whiteboard
+      backendRefs:
+        - name: whiteboard
+          namespace: nextcloud
+          port: 3002
     - backendRefs:
         - name: nextcloud
           namespace: nextcloud

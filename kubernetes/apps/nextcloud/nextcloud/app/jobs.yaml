@@ -370,3 +370,92 @@ spec:
       - name: app-main
         persistentVolumeClaim:
           claimName: nextcloud-pvc
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-job-config-whiteboard
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 2
+  activeDeadlineSeconds: 10800
+  template:
+    spec:
+      securityContext:
+        runAsUser: 82
+        runAsGroup: 82
+        fsGroup: 82
+      containers:
+      - name: nextcloud-job-config-whiteboard
+        image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
+        command: ["/bin/sh", "-ec"]
+        args:
+        - |
+          set -eu
+          timeout=7200
+
+          wait_installed_and_ready() {
+            elapsed=0
+            until php /var/www/html/occ status --output json | grep -q '"installed":true'; do
+              echo "Waiting for Nextcloud installation..."
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for Nextcloud installation"
+                exit 1
+              fi
+            done
+
+            elapsed=0
+            until php /var/www/html/occ status --output json | grep -q '"maintenance":false'; do
+              echo "Waiting for maintenance mode to be disabled..."
+              sleep 10
+              elapsed=$((elapsed + 10))
+              if [ "$elapsed" -ge "$timeout" ]; then
+                echo "Timed out waiting for maintenance mode to be disabled"
+                exit 1
+              fi
+            done
+          }
+
+          wait_installed_and_ready
+
+          elapsed=0
+          until php /var/www/html/occ app:list | sed -n '/Enabled:/,/Disabled:/p' | grep -q -- '- whiteboard:'; do
+            echo "Waiting for whiteboard app to be enabled..."
+            sleep 10
+            elapsed=$((elapsed + 10))
+            if [ "$elapsed" -ge "$timeout" ]; then
+              echo "Timed out waiting for whiteboard app"
+              exit 1
+            fi
+          done
+
+          echo "Configuring whiteboard..."
+          php /var/www/html/occ config:app:set whiteboard collabBackendUrl --value="https://cloud.${SECRET_DOMAIN}/whiteboard/"
+          php /var/www/html/occ config:app:set whiteboard jwt_secret_key --value="${NEXTCLOUD_WHITEBOARD_SECRET}"
+          echo "Whiteboard configuration completed."
+        volumeMounts:
+        - name: app-main
+          mountPath: /var/www
+          subPath: root
+        - name: app-main
+          mountPath: /var/www/html
+          subPath: html
+        - name: app-main
+          mountPath: /var/www/html/config
+          subPath: config
+        - name: app-main
+          mountPath: /var/www/html/custom_apps
+          subPath: custom_apps
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
+      restartPolicy: OnFailure
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: nextcloud-data-pvc
+      - name: app-main
+        persistentVolumeClaim:
+          claimName: nextcloud-pvc
