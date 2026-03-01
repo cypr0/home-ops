@@ -48,9 +48,9 @@ spec:
                 node openclaw.mjs config set gateway.remote.token "$OPENCLAW_GATEWAY_TOKEN"
                 node openclaw.mjs config set gateway.trustedProxies '["10.69.0.0/16","127.0.0.1/32","::1/128"]' --strict-json
                 node openclaw.mjs config set gateway.controlUi.allowedOrigins '["https://claw.${SECRET_DOMAIN}"]' --strict-json
-                node openclaw.mjs config set agents.defaults.models '{"openrouter/openai/gpt-5.2-chat":{"alias":"gpt"},"openrouter/anthropic/claude-opus-4.1":{"alias":"opus"},"openrouter/anthropic/claude-sonnet-4.5":{"alias":"sonnet"},"openrouter/mistralai/mistral-large-2":{"alias":"mistral"}}' --strict-json
+                node openclaw.mjs config set agents.defaults.models '{"openrouter/openai/gpt-5.2-chat":{"alias":"gpt"},"openrouter/anthropic/claude-opus-4.1":{"alias":"opus"},"openrouter/anthropic/claude-sonnet-4.5":{"alias":"sonnet"},"openrouter/mistralai/mistral-large-2512":{"alias":"mistral"}}' --strict-json
                 node openclaw.mjs config set agents.defaults.model.primary "openrouter/openai/gpt-5.2-chat"
-                node openclaw.mjs config set agents.defaults.model.fallbacks '["openrouter/anthropic/claude-opus-4.1","openrouter/mistralai/mistral-large-2","openrouter/anthropic/claude-sonnet-4.5"]' --strict-json
+                node openclaw.mjs config set agents.defaults.model.fallbacks '["openrouter/anthropic/claude-opus-4.1","openrouter/mistralai/mistral-large-2512","openrouter/anthropic/claude-sonnet-4.5"]' --strict-json
 
                 node openclaw.mjs gateway --allow-unconfigured --bind lan --port 18789 &
                 gateway_pid=$!
