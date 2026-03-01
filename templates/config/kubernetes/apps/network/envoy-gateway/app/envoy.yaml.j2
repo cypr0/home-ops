@@ -135,6 +135,9 @@ spec:
     xForwardedFor:
       trustedCIDRs:
         - "#{ cluster_pod_cidr }#"
+  path:
+    escapedSlashesAction: KeepUnchanged
+    disableMergeSlashes: true
   http2:
     onInvalidMessage: TerminateStream
   http3: {}

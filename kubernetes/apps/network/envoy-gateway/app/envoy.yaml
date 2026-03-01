@@ -135,6 +135,9 @@ spec:
     xForwardedFor:
       trustedCIDRs:
         - "10.69.0.0/16"
+  path:
+    escapedSlashesAction: KeepUnchanged
+    disableMergeSlashes: true
   http2:
     onInvalidMessage: TerminateStream
   http3: {}
