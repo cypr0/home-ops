@@ -17,6 +17,12 @@ spec:
     remediation:
       retries: 3
   values:
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+
     controllers:
       openclaw:
         replicas: 1
