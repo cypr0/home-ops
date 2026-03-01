@@ -23,6 +23,10 @@ spec:
     parameters:
       max_connections: "200"
       shared_buffers: 256MB
+      max_wal_size: 2GB
+      min_wal_size: 512MB
+      wal_keep_size: 256MB
+      max_slot_wal_keep_size: 1GB
   nodeMaintenanceWindow:
     inProgress: false
     reusePVC: true
@@ -45,6 +49,10 @@ spec:
       secretKeyRef:
         name: cloudnative-pg-secret
         key: AWS_REGION
+  - name: AWS_REQUEST_CHECKSUM_CALCULATION
+    value: when_required
+  - name: AWS_RESPONSE_CHECKSUM_VALIDATION
+    value: when_required
   plugins:
     - name: barman-cloud.cloudnative-pg.io
       isWALArchiver: true
