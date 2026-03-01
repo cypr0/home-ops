@@ -37,9 +37,17 @@ spec:
             image:
               repository: ghcr.io/openclaw/openclaw
               tag: 2026.2.26
+            command:
+              - node
+              - openclaw.mjs
+              - gateway
+              - --allow-unconfigured
+              - --bind
+              - lan
+              - --port
+              - "18789"
             env:
-              OPENCLAW_GATEWAY_BIND: lan
-              OPENCLAW_GATEWAY_PORT: &port 18789
+              PORT: &port 18789
               TZ: ${TIMEZONE}
               OPENCLAW_STATE_DIR: /data/.openclaw
               OPENCLAW_WORKSPACE_DIR: /data/workspace
