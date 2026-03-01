@@ -81,7 +81,7 @@ spec:
         tokenKey: TOKEN
       mail:
         enabled: true
-        fromAddress: "Nextcloud <mail@${SECRET_DOMAIN}>"
+        fromAddress: "admin@${SECRET_DOMAIN}"
         domain: ${SECRET_DOMAIN}
         smtp:
           port: 25
