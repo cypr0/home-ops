@@ -285,7 +285,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-richdocuments
+  name: nextcloud-job-config-richdocuments-v2
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -343,7 +343,7 @@ spec:
           done
 
           echo "Configuring richdocuments..."
-          php /var/www/html/occ config:app:set --value http://collabora-app.nextcloud.svc.cluster.local:9980 richdocuments wopi_url
+          php /var/www/html/occ config:app:set --value https://office.${SECRET_DOMAIN} richdocuments wopi_url
           php /var/www/html/occ richdocuments:activate-config
           echo "Richdocuments configuration completed."
         volumeMounts:
