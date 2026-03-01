@@ -97,3 +97,9 @@ spec:
       createdb: false
       passwordSecret:
         name: open-webui-db-credentials
+    - name: openwebuiragusr
+      login: true
+      superuser: false
+      createdb: false
+      passwordSecret:
+        name: open-webui-rag-db-credentials

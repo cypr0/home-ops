@@ -1,0 +1,14 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: open-webui-rag-db
+spec:
+  name: openwebuirag
+  owner: openwebuiragusr
+  cluster:
+    name: postgres
+  extensions:
+    - name: vector
+      ensure: present
+    - name: vchord
+      ensure: present
