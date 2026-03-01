@@ -91,3 +91,9 @@ spec:
       createdb: false
       passwordSecret:
         name: nextcloud-db-credentials
+    - name: openwebuiusr
+      login: true
+      superuser: false
+      createdb: false
+      passwordSecret:
+        name: open-webui-db-credentials

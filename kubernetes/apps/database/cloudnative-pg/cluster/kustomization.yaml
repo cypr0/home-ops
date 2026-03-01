@@ -12,3 +12,4 @@ resources:
   - ./databases/authentik.yaml
   - ./databases/paperless.yaml
   - ./databases/nextcloud.yaml
+  - ./databases/open-webui.yaml

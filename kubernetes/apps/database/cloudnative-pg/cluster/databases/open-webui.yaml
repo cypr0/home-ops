@@ -1,0 +1,9 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: open-webui-db
+spec:
+  name: openwebui
+  owner: openwebuiusr
+  cluster:
+    name: postgres
