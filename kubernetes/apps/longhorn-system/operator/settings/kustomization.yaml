@@ -6,5 +6,6 @@ namespace: longhorn-system
 resources:
   - ./backup-6h.yaml
   - ./backup-daily.yaml
+  - ./filesystem-trim-30m.yaml
   - ./snapshot-1h.yaml
   - ./snapshot-6h.yaml
