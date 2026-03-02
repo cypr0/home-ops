@@ -34,6 +34,24 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
           secret.reloader.stakater.com/reload: "openclaw-secret"
+        initContainers:
+          copy-agent-config:
+            image:
+              repository: alpine
+              tag: latest
+            command:
+              - /bin/sh
+              - -ec
+              - |
+                mkdir -p /data/workspace/cluster-monitor
+                cp -v /config/agents/cluster-monitor/* /data/workspace/cluster-monitor/
+                ls -la /data/workspace/cluster-monitor/
+            volumeMounts:
+              - name: agent-config
+                mountPath: /config/agents/cluster-monitor
+              - name: data
+                mountPath: /data
+                subPath: data
         containers:
           app:
             image:
@@ -166,6 +184,9 @@ spec:
         existingClaim: openclaw-pvc
         advancedMounts:
           openclaw:
+            copy-agent-config:
+              - path: /data
+                subPath: data
             app:
               - path: /data
                 subPath: data
@@ -174,5 +195,5 @@ spec:
         name: openclaw-agent-cluster-monitor
         advancedMounts:
           openclaw:
-            app:
-              - path: /data/workspace/cluster-monitor
+            copy-agent-config:
+              - path: /config/agents/cluster-monitor
