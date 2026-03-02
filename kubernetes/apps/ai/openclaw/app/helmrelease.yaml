@@ -34,24 +34,6 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
           secret.reloader.stakater.com/reload: "openclaw-secret"
-        initContainers:
-          copy-agent-config:
-            image:
-              repository: alpine
-              tag: latest
-            command:
-              - /bin/sh
-              - -ec
-              - |
-                mkdir -p /data/workspace/cluster-monitor
-                cp -v /config/agents/cluster-monitor/* /data/workspace/cluster-monitor/
-                ls -la /data/workspace/cluster-monitor/
-            volumeMounts:
-              - name: agent-config
-                mountPath: /config/agents/cluster-monitor
-              - name: data
-                mountPath: /data
-                subPath: data
         containers:
           app:
             image:
@@ -62,6 +44,13 @@ spec:
               - -ec
               - |
                 AUTO_APPROVE_CIDRS="192.168.30.0/24,10.69.0.0/16"
+
+                # Copy agent config from ConfigMap to workspace
+                mkdir -p /data/workspace/cluster-monitor
+                if [ -d /config/agents/cluster-monitor ]; then
+                  cp -v /config/agents/cluster-monitor/* /data/workspace/cluster-monitor/ || true
+                  ls -la /data/workspace/cluster-monitor/
+                fi
 
                 node openclaw.mjs config set gateway.auth.mode token
                 node openclaw.mjs config set gateway.auth.token "$OPENCLAW_GATEWAY_TOKEN"
@@ -184,16 +173,11 @@ spec:
         existingClaim: openclaw-pvc
         advancedMounts:
           openclaw:
-            copy-agent-config:
-              - path: /data
-                subPath: data
             app:
               - path: /data
                 subPath: data
       agent-config:
         type: configMap
         name: openclaw-agent-cluster-monitor
-        advancedMounts:
-          openclaw:
-            copy-agent-config:
-              - path: /config/agents/cluster-monitor
+        globalMounts:
+          - path: /config/agents/cluster-monitor
