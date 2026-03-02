@@ -54,21 +54,17 @@ spec:
                 node openclaw.mjs config set agents.defaults.model.primary "openrouter/openai/gpt-5.2-chat"
                 node openclaw.mjs config set agents.defaults.model.fallbacks '["openrouter/anthropic/claude-opus-4.1","openrouter/mistralai/mistral-large-2512","openrouter/anthropic/claude-sonnet-4.5"]' --strict-json
 
-                # Multi-agent setup (safe defaults for first-time use)
-                node openclaw.mjs config set agents.list '[{"id":"ops-readonly","default":true,"name":"Ops Readonly","workspace":"/data/workspace/ops-readonly","model":"openrouter/openai/gpt-5.2-chat"},{"id":"gitops-pr","name":"GitOps PR","workspace":"/data/workspace/gitops-pr","model":"openrouter/openai/gpt-5.2-chat"},{"id":"knowledge","name":"Knowledge","workspace":"/data/workspace/knowledge","model":"openrouter/anthropic/claude-sonnet-4.5"}]' --strict-json
+                # Single cluster-monitor agent
+                node openclaw.mjs config set agents.list '[{"id":"cluster-monitor","default":true,"name":"Cluster Monitor","workspace":"/data/workspace/cluster-monitor","model":"openrouter/openai/gpt-5.2-chat"}]' --strict-json
 
-                mkdir -p /data/workspace/ops-readonly
-                mkdir -p /data/workspace/gitops-pr
-                mkdir -p /data/workspace/knowledge
+                mkdir -p /data/workspace/cluster-monitor
 
-                for agent in ops-readonly gitops-pr knowledge; do
-                  for doc in AGENTS.md SOUL.md IDENTITY.md USER.md TOOLS.md; do
-                    src="/config/agents/${agent}/${doc}"
-                    dst="/data/workspace/${agent}/${doc}"
-                    if [ -f "$src" ]; then
-                      cp "$src" "$dst"
-                    fi
-                  done
+                for doc in AGENTS.md SOUL.md IDENTITY.md USER.md TOOLS.md; do
+                  src="/config/agents/cluster-monitor/${doc}"
+                  dst="/data/workspace/cluster-monitor/${doc}"
+                  if [ -f "$src" ]; then
+                    cp "$src" "$dst"
+                  fi
                 done
 
                 node openclaw.mjs gateway --allow-unconfigured --bind lan --port 18789 &
@@ -183,18 +179,8 @@ spec:
             app:
               - path: /data
                 subPath: data
-      agent-ops-readonly:
+      agent-cluster-monitor:
         type: configMap
-        name: openclaw-agent-ops-readonly
+        name: openclaw-agent-cluster-monitor
         globalMounts:
-          - path: /config/agents/ops-readonly
-      agent-gitops-pr:
-        type: configMap
-        name: openclaw-agent-gitops-pr
-        globalMounts:
-          - path: /config/agents/gitops-pr
-      agent-knowledge:
-        type: configMap
-        name: openclaw-agent-knowledge
-        globalMounts:
-          - path: /config/agents/knowledge
+          - path: /config/agents/cluster-monitor
