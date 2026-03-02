@@ -57,16 +57,6 @@ spec:
                 # Single cluster-monitor agent
                 node openclaw.mjs config set agents.list '[{"id":"cluster-monitor","default":true,"name":"Cluster Monitor","workspace":"/data/workspace/cluster-monitor","model":"openrouter/openai/gpt-5.2-chat"}]' --strict-json
 
-                mkdir -p /data/workspace/cluster-monitor
-
-                for doc in AGENTS.md SOUL.md IDENTITY.md USER.md TOOLS.md; do
-                  src="/config/agents/cluster-monitor/${doc}"
-                  dst="/data/workspace/cluster-monitor/${doc}"
-                  if [ -f "$src" ]; then
-                    cp "$src" "$dst"
-                  fi
-                done
-
                 node openclaw.mjs gateway --allow-unconfigured --bind lan --port 18789 &
                 gateway_pid=$!
 
@@ -179,8 +169,10 @@ spec:
             app:
               - path: /data
                 subPath: data
-      agent-cluster-monitor:
+      agent-config:
         type: configMap
         name: openclaw-agent-cluster-monitor
-        globalMounts:
-          - path: /config/agents/cluster-monitor
+        advancedMounts:
+          openclaw:
+            app:
+              - path: /data/workspace/cluster-monitor
