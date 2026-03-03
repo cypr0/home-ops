@@ -67,16 +67,6 @@ spec:
             config:
               botToken: "${TELEGRAM_BOT_TOKEN}"
               webhookPath: /webhooks/telegram
-              # if you keep the default "allowlist" policy you must
-              # populate one of the allow lists (groupAllowFrom/allowFrom)
-              # or the gateway will drop all group messages and emit the
-              # doctor warning seen above.  alternatively, switch to
-              # "open" to accept all groups.
-              # groupPolicy: open
-              # groupAllowFrom:
-              #   - 123456789   # replace with allowed group IDs
-              # allowFrom:
-              #   - 123456789   # optional individual user IDs
 
         modelProvider:
           provider: openrouter
@@ -96,7 +86,6 @@ spec:
               name: Mistral Large
           extra: {}
 
-        # OpenAI als sekundärer Provider (für STT, TTS, Image Generation)
         models:
           mode: merge
           providers:
@@ -158,6 +147,17 @@ spec:
             - id: openclaw-mcp-adapter
               onlineSpec: openclaw-mcp-adapter
               offlineMode: preinstalled
+      initContainers:
+        - name: install-ffmpeg
+          image: mwader/static-ffmpeg:7.1
+          command: ["sh", "-c"]
+          args:
+            - |
+              cp /ffmpeg /ffprobe /opt/ffmpeg/
+              chmod +x /opt/ffmpeg/ffmpeg /opt/ffmpeg/ffprobe
+          volumeMounts:
+            - name: ffmpeg
+              mountPath: /opt/ffmpeg
       container:
         command:
           - node
@@ -168,10 +168,14 @@ spec:
           - lan
           - --port
           - "18789"
+        volumeMounts:
+          - name: ffmpeg
+            mountPath: /opt/ffmpeg
         env:
           TZ: ${TIMEZONE}
           NODE_OPTIONS: --max-old-space-size=2048
           OPENAI_API_KEY: "${OPENAI_API_KEY}"
+          PATH: "/opt/ffmpeg:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         envFrom:
           - secretRef:
               name: openclaw-secret
@@ -245,6 +249,10 @@ spec:
       sharedMemory:
         enabled: true
         sizeLimit: 2Gi
+      ffmpeg:
+        enabled: true
+        type: emptyDir
+        sizeLimit: 200Mi
 
     ingress:
       enabled: false
