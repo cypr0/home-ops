@@ -51,10 +51,6 @@ spec:
         # replace with your actual allowed origin(s) or keep fallback true
         allowedOrigins:
           - "https://claw.${SECRET_DOMAIN}"
-      plugins:
-        allow:
-          - openclaw-mcp-adapter
-
     openclaw:
       image:
         repository: ghcr.io/openclaw/openclaw
@@ -67,6 +63,15 @@ spec:
           create: false
       config:
         mode: merge
+        plugins:
+          allow:
+            - openclaw-mcp-adapter
+        channels:
+          - id: telegram
+            provider: telegram
+            config:
+              botToken: "${TELEGRAM_BOT_TOKEN}"
+              webhookPath: /webhooks/telegram
         modelProvider:
           provider: openrouter
           api: openai-completions
