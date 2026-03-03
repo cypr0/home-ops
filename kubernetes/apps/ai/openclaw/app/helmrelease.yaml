@@ -44,6 +44,13 @@ spec:
         allowInsecureAuth: false
         dangerouslyAllowHostHeaderOriginFallback: false
         dangerouslyDisableDeviceAuth: false
+        # required when Control UI is exposed to non-loopback network
+        # replace with your actual allowed origin(s)
+        allowedOrigins:
+          - "https://claw.${SECRET_DOMAIN}"
+      plugins:
+        allow:
+          - openclaw-mcp-adapter
 
     openclaw:
       image:
