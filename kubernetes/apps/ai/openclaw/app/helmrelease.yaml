@@ -42,13 +42,8 @@ spec:
         - "::1/128"
       controlUi:
         allowInsecureAuth: false
-        # if allowedOrigins is missing or expands to an empty/invalid value,
-        # the gateway refuses to start; enabling the host-header fallback
-        # avoids the failure while you sort out a proper origin list.
-        dangerouslyAllowHostHeaderOriginFallback: false
+        dangerouslyAllowHostHeaderOriginFallback: true
         dangerouslyDisableDeviceAuth: false
-        # required when Control UI is exposed to non-loopback network
-        # replace with your actual allowed origin(s) or keep fallback true
         allowedOrigins:
           - "https://claw.${SECRET_DOMAIN}"
     openclaw:
@@ -72,6 +67,17 @@ spec:
             config:
               botToken: "${TELEGRAM_BOT_TOKEN}"
               webhookPath: /webhooks/telegram
+              # if you keep the default "allowlist" policy you must
+              # populate one of the allow lists (groupAllowFrom/allowFrom)
+              # or the gateway will drop all group messages and emit the
+              # doctor warning seen above.  alternatively, switch to
+              # "open" to accept all groups.
+              # groupPolicy: open
+              # groupAllowFrom:
+              #   - 123456789   # replace with allowed group IDs
+              # allowFrom:
+              #   - 123456789   # optional individual user IDs
+
         modelProvider:
           provider: openrouter
           api: openai-completions
