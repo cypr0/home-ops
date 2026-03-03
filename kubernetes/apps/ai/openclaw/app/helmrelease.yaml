@@ -42,10 +42,13 @@ spec:
         - "::1/128"
       controlUi:
         allowInsecureAuth: false
-        dangerouslyAllowHostHeaderOriginFallback: false
+        # if allowedOrigins is missing or expands to an empty/invalid value,
+        # the gateway refuses to start; enabling the host-header fallback
+        # avoids the failure while you sort out a proper origin list.
+        dangerouslyAllowHostHeaderOriginFallback: true
         dangerouslyDisableDeviceAuth: false
         # required when Control UI is exposed to non-loopback network
-        # replace with your actual allowed origin(s)
+        # replace with your actual allowed origin(s) or keep fallback true
         allowedOrigins:
           - "https://claw.${SECRET_DOMAIN}"
       plugins:
