@@ -174,7 +174,6 @@ spec:
         env:
           TZ: ${TIMEZONE}
           NODE_OPTIONS: --max-old-space-size=2048
-          OPENAI_API_KEY: "${OPENAI_API_KEY}"
           PATH: "/opt/ffmpeg:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         envFrom:
           - secretRef:
