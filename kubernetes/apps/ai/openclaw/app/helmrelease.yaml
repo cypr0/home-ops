@@ -97,7 +97,7 @@ spec:
                   url: http://127.0.0.1:8080/mcp
               toolPrefix: true
       bootstrap:
-        mode: offline
+        mode: online
         seedImage:
           repository: ghcr.io/weak-fox/openclaw-offline-seed
           tag: "v1.0.0-oc-2026.3.2"
