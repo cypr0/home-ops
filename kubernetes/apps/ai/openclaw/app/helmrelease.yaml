@@ -41,11 +41,11 @@ spec:
         - "127.0.0.1/32"
         - "::1/128"
       controlUi:
-        allowInsecureAuth: true
+        allowInsecureAuth: false
         # if allowedOrigins is missing or expands to an empty/invalid value,
         # the gateway refuses to start; enabling the host-header fallback
         # avoids the failure while you sort out a proper origin list.
-        dangerouslyAllowHostHeaderOriginFallback: true
+        dangerouslyAllowHostHeaderOriginFallback: false
         dangerouslyDisableDeviceAuth: false
         # required when Control UI is exposed to non-loopback network
         # replace with your actual allowed origin(s) or keep fallback true
