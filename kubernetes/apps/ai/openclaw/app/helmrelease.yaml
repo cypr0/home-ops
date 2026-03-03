@@ -95,8 +95,42 @@ spec:
             - id: mistralai/mistral-large-2512
               name: Mistral Large
           extra: {}
+
+        # OpenAI als sekundärer Provider (für STT, TTS, Image Generation)
+        models:
+          mode: merge
+          providers:
+            openai:
+              baseUrl: https://api.openai.com/v1
+              apiKey: "${OPENAI_API_KEY}"
+              api: openai-completions
+              models: []
+
+        # Whisper / Speech-to-Text
         tools:
+          media:
+            audio:
+              enabled: true
+              maxBytes: 20971520
+              models:
+                - provider: openai
+                  model: gpt-4o-mini-transcribe
           execHost: gateway
+
+        # Text-to-Speech
+        messages:
+          tts:
+            auto: "off"
+            provider: openai
+            openai:
+              model: gpt-4o-mini-tts
+              voice: alloy
+
+        # Image Generation
+        agents:
+          defaults:
+            imageModel:
+              primary: "openai/gpt-image-1"
       plugins:
         runtimeEntries:
           - id: openclaw-mcp-adapter
@@ -117,6 +151,7 @@ spec:
           enabled: true
           items:
             - weather
+            - openai-image-gen
         plugins:
           enabled: true
           items:
@@ -136,6 +171,7 @@ spec:
         env:
           TZ: ${TIMEZONE}
           NODE_OPTIONS: --max-old-space-size=2048
+          OPENAI_API_KEY: "${OPENAI_API_KEY}"
         envFrom:
           - secretRef:
               name: openclaw-secret
