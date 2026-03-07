@@ -8,10 +8,43 @@ spec:
   activeDeadlineSeconds: 7200
   template:
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nextcloud
+                app.kubernetes.io/component: app
+            topologyKey: kubernetes.io/hostname
       securityContext:
         runAsUser: 82
         runAsGroup: 82
         fsGroup: 82
+      initContainers:
+      - name: wait-for-job-lock
+        image: busybox:1.37.0-uclibc
+        command: ['sh', '-c']
+        args:
+        - |
+          set -eu
+          LOCKDIR="/var/www/html/data/.job_lock"
+          TIMEOUT=3600
+          elapsed=0
+          until mkdir "$LOCKDIR" 2>/dev/null; do
+            echo "Waiting for job lock..."
+            sleep 5
+            elapsed=$((elapsed + 5))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Lock timeout waiting for other jobs"
+              exit 1
+            fi
+          done
+          echo "$$" > "$LOCKDIR/pid"
+          echo "Lock acquired by $$ ($(date))"
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
       containers:
       - name: nextcloud-job-config-postinstall
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -19,6 +52,8 @@ spec:
         args:
         - |
           set -eu
+          trap 'rmdir /var/www/html/data/.job_lock 2>/dev/null || true; echo "Lock released"' EXIT
+
           timeout=1800
 
           wait_installed_and_ready() {
@@ -96,6 +131,14 @@ spec:
       activeDeadlineSeconds: 120
       template:
         spec:
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: nextcloud
+                    app.kubernetes.io/component: app
+                topologyKey: kubernetes.io/hostname
           securityContext:
             runAsUser: 82
             runAsGroup: 82
@@ -171,10 +214,43 @@ spec:
   activeDeadlineSeconds: 10800
   template:
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nextcloud
+                app.kubernetes.io/component: app
+            topologyKey: kubernetes.io/hostname
       securityContext:
         runAsUser: 82
         runAsGroup: 82
         fsGroup: 82
+      initContainers:
+      - name: wait-for-job-lock
+        image: busybox:1.37.0-uclibc
+        command: ['sh', '-c']
+        args:
+        - |
+          set -eu
+          LOCKDIR="/var/www/html/data/.job_lock"
+          TIMEOUT=3600
+          elapsed=0
+          until mkdir "$LOCKDIR" 2>/dev/null; do
+            echo "Waiting for job lock..."
+            sleep 5
+            elapsed=$((elapsed + 5))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Lock timeout waiting for other jobs"
+              exit 1
+            fi
+          done
+          echo "$$" > "$LOCKDIR/pid"
+          echo "Lock acquired by $$ ($(date))"
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
       containers:
       - name: nextcloud-job-config-addapps
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -182,6 +258,8 @@ spec:
         args:
         - |
           set -eu
+          trap 'rmdir /var/www/html/data/.job_lock 2>/dev/null || true; echo "Lock released"' EXIT
+
           timeout=7200
 
           wait_installed_and_ready() {
@@ -270,10 +348,43 @@ spec:
   activeDeadlineSeconds: 10800
   template:
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nextcloud
+                app.kubernetes.io/component: app
+            topologyKey: kubernetes.io/hostname
       securityContext:
         runAsUser: 82
         runAsGroup: 82
         fsGroup: 82
+      initContainers:
+      - name: wait-for-job-lock
+        image: busybox:1.37.0-uclibc
+        command: ['sh', '-c']
+        args:
+        - |
+          set -eu
+          LOCKDIR="/var/www/html/data/.job_lock"
+          TIMEOUT=3600
+          elapsed=0
+          until mkdir "$LOCKDIR" 2>/dev/null; do
+            echo "Waiting for job lock..."
+            sleep 5
+            elapsed=$((elapsed + 5))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Lock timeout waiting for other jobs"
+              exit 1
+            fi
+          done
+          echo "$$" > "$LOCKDIR/pid"
+          echo "Lock acquired by $$ ($(date))"
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
       containers:
       - name: nextcloud-job-config-oidc
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -281,6 +392,8 @@ spec:
         args:
         - |
           set -eu
+          trap 'rmdir /var/www/html/data/.job_lock 2>/dev/null || true; echo "Lock released"' EXIT
+
           timeout=7200
 
           wait_installed_and_ready() {
@@ -374,10 +487,43 @@ spec:
   activeDeadlineSeconds: 10800
   template:
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nextcloud
+                app.kubernetes.io/component: app
+            topologyKey: kubernetes.io/hostname
       securityContext:
         runAsUser: 82
         runAsGroup: 82
         fsGroup: 82
+      initContainers:
+      - name: wait-for-job-lock
+        image: busybox:1.37.0-uclibc
+        command: ['sh', '-c']
+        args:
+        - |
+          set -eu
+          LOCKDIR="/var/www/html/data/.job_lock"
+          TIMEOUT=3600
+          elapsed=0
+          until mkdir "$LOCKDIR" 2>/dev/null; do
+            echo "Waiting for job lock..."
+            sleep 5
+            elapsed=$((elapsed + 5))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Lock timeout waiting for other jobs"
+              exit 1
+            fi
+          done
+          echo "$$" > "$LOCKDIR/pid"
+          echo "Lock acquired by $$ ($(date))"
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
       containers:
       - name: nextcloud-job-config-richdocuments
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -385,6 +531,8 @@ spec:
         args:
         - |
           set -eu
+          trap 'rmdir /var/www/html/data/.job_lock 2>/dev/null || true; echo "Lock released"' EXIT
+
           timeout=7200
 
           wait_installed_and_ready() {
@@ -464,10 +612,43 @@ spec:
   activeDeadlineSeconds: 10800
   template:
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nextcloud
+                app.kubernetes.io/component: app
+            topologyKey: kubernetes.io/hostname
       securityContext:
         runAsUser: 82
         runAsGroup: 82
         fsGroup: 82
+      initContainers:
+      - name: wait-for-job-lock
+        image: busybox:1.37.0-uclibc
+        command: ['sh', '-c']
+        args:
+        - |
+          set -eu
+          LOCKDIR="/var/www/html/data/.job_lock"
+          TIMEOUT=3600
+          elapsed=0
+          until mkdir "$LOCKDIR" 2>/dev/null; do
+            echo "Waiting for job lock..."
+            sleep 5
+            elapsed=$((elapsed + 5))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Lock timeout waiting for other jobs"
+              exit 1
+            fi
+          done
+          echo "$$" > "$LOCKDIR/pid"
+          echo "Lock acquired by $$ ($(date))"
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
       containers:
       - name: nextcloud-job-config-ai
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -475,6 +656,8 @@ spec:
         args:
         - |
           set -eu
+          trap 'rmdir /var/www/html/data/.job_lock 2>/dev/null || true; echo "Lock released"' EXIT
+
           timeout=7200
 
           wait_installed_and_ready() {
@@ -594,10 +777,43 @@ spec:
   activeDeadlineSeconds: 10800
   template:
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: nextcloud
+                app.kubernetes.io/component: app
+            topologyKey: kubernetes.io/hostname
       securityContext:
         runAsUser: 82
         runAsGroup: 82
         fsGroup: 82
+      initContainers:
+      - name: wait-for-job-lock
+        image: busybox:1.37.0-uclibc
+        command: ['sh', '-c']
+        args:
+        - |
+          set -eu
+          LOCKDIR="/var/www/html/data/.job_lock"
+          TIMEOUT=3600
+          elapsed=0
+          until mkdir "$LOCKDIR" 2>/dev/null; do
+            echo "Waiting for job lock..."
+            sleep 5
+            elapsed=$((elapsed + 5))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Lock timeout waiting for other jobs"
+              exit 1
+            fi
+          done
+          echo "$$" > "$LOCKDIR/pid"
+          echo "Lock acquired by $$ ($(date))"
+        volumeMounts:
+        - name: data
+          mountPath: /var/www/html/data
+          subPath: data
       containers:
       - name: nextcloud-job-config-whiteboard
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -605,6 +821,8 @@ spec:
         args:
         - |
           set -eu
+          trap 'rmdir /var/www/html/data/.job_lock 2>/dev/null || true; echo "Lock released"' EXIT
+
           timeout=7200
 
           wait_installed_and_ready() {
