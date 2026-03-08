@@ -97,6 +97,10 @@ spec:
             gnetId: 16888
             revision: 9
             datasource: Prometheus
+          talos-cluster:
+            gnetId: 12114
+            revision: 1
+            datasource: Prometheus
     alertmanager:
       enabled: true
       alertmanagerSpec:
