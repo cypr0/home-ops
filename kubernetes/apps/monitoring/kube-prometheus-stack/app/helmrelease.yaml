@@ -99,11 +99,11 @@ spec:
             datasource: Prometheus
           authentik:
             gnetId: 14837
-            revision: 1
+            revision: 2
             datasource: Prometheus
           nextcloud:
             gnetId: 20716
-            revision: 1
+            revision: 2
             datasource: Prometheus
           postgres-cnpg:
             gnetId: 13115
@@ -115,7 +115,7 @@ spec:
             datasource: Prometheus
           cert-manager:
             gnetId: 20842
-            revision: 1
+            revision: 3
             datasource: Prometheus
           envoy-overview:
             gnetId: 24459
