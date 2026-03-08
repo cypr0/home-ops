@@ -64,6 +64,13 @@ spec:
         prometheus:
           serviceMonitor:
             enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
     worker:
       autoscaling:
         enabled: true
@@ -73,6 +80,13 @@ spec:
         prometheus:
           serviceMonitor:
             enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
     geoip:
       enabled: false
       editionIds: "GeoLite2-City GeoLite2-ASN"
