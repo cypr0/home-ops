@@ -29,6 +29,45 @@ spec:
       enabled: true
     nextcloud:
       extraInitContainers:
+        - name: validate-subpaths
+          image: busybox:1.37.0-uclibc
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              echo "Validating SubPath mounts..."
+
+              # Check if all required paths are accessible
+              REQUIRED_PATHS="/var/www /var/www/html /var/www/html/config /var/www/html/custom_apps /var/www/html/data"
+
+              for dir in $REQUIRED_PATHS; do
+                if [ ! -d "$dir" ]; then
+                  echo "ERROR: SubPath mount failed for $dir - directory not accessible"
+                  exit 1
+                fi
+                if [ ! -w "$dir" ] 2>/dev/null || [ ! -r "$dir" ] 2>/dev/null; then
+                  echo "WARNING: Permission issue on $dir, attempting to fix..."
+                  chmod 755 "$dir" 2>/dev/null || true
+                fi
+              done
+
+              echo "✓ All SubPath mounts validated successfully"
+          volumeMounts:
+            - name: nextcloud-main
+              mountPath: /var/www
+              subPath: root
+            - name: nextcloud-main
+              mountPath: /var/www/html
+              subPath: html
+            - name: nextcloud-main
+              mountPath: /var/www/html/config
+              subPath: config
+            - name: nextcloud-main
+              mountPath: /var/www/html/custom_apps
+              subPath: custom_apps
+            - name: nextcloud-data
+              mountPath: /var/www/html/data
         - name: fix-data-permissions
           image: busybox:1.37.0-uclibc
           command:
@@ -256,17 +295,17 @@ spec:
       successThreshold: 1
     livenessProbe:
       enabled: true
-      initialDelaySeconds: 5
+      initialDelaySeconds: 30
       periodSeconds: 10
       timeoutSeconds: 5
-      failureThreshold: 3
+      failureThreshold: 6
       successThreshold: 1
     readinessProbe:
       enabled: true
-      initialDelaySeconds: 5
+      initialDelaySeconds: 30
       periodSeconds: 10
       timeoutSeconds: 5
-      failureThreshold: 3
+      failureThreshold: 5
       successThreshold: 1
     nginx:
       enabled: true
