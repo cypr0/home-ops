@@ -74,6 +74,7 @@ spec:
         GF_AUTH_GENERIC_OAUTH_USE_PKCE: "true"
         GF_AUTH_GENERIC_OAUTH_USE_REFRESH_TOKEN: "true"
       envFromSecret: monitoring-secret
+      datasources: {}
       dashboardProviders:
         dashboardproviders.yaml:
           apiVersion: 1
