@@ -260,7 +260,6 @@ spec:
                   // Circumvention for client freezes - https://github.com/nextcloud/desktop/issues/5094
                 'bulkupload.enabled' => false,
 
-                'backgroundjobs_mode' => 'webcron',
                 'default_language' => 'de',
                 'default_locale' => 'de_DE',
                 'default_phone_region' => 'DE',
