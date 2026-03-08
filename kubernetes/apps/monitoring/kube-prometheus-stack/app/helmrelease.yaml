@@ -74,25 +74,6 @@ spec:
         GF_AUTH_GENERIC_OAUTH_USE_PKCE: "true"
         GF_AUTH_GENERIC_OAUTH_USE_REFRESH_TOKEN: "true"
       envFromSecret: monitoring-secret
-      datasources:
-        datasources.yaml:
-          apiVersion: 1
-          datasources:
-            - name: Prometheus
-              type: prometheus
-              uid: prometheus
-              url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
-              access: proxy
-              isDefault: true
-            - name: Alertmanager
-              type: alertmanager
-              uid: alertmanager
-              url: http://kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093
-              access: proxy
-              isDefault: false
-              jsonData:
-                handleGrafanaManagedAlerts: false
-                implementation: prometheus
       dashboardProviders:
         dashboardproviders.yaml:
           apiVersion: 1
