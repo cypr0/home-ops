@@ -54,10 +54,6 @@ spec:
         enabled: true
         storageClassName: longhorn-basic
         size: 5Gi
-      admin:
-        existingSecret: monitoring-secret
-        userKey: GRAFANA_ADMIN_USER
-        passwordKey: GRAFANA_ADMIN_PASSWORD
       env:
         GF_SERVER_ROOT_URL: https://grafana.${SECRET_DOMAIN}
         GF_AUTH_DISABLE_LOGIN_FORM: "true"
