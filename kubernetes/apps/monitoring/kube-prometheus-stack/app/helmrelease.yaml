@@ -97,36 +97,36 @@ spec:
             gnetId: 16888
             revision: 9
             datasource: Prometheus
-          talos-cluster:
-            gnetId: 12114
-            revision: 1
-            datasource: Prometheus
-          paperless:
-            gnetId: 14140
-            revision: 1
-            datasource: Prometheus
           authentik:
-            gnetId: 15357
+            gnetId: 14837
             revision: 1
             datasource: Prometheus
           nextcloud:
-            gnetId: 15759
+            gnetId: 20716
             revision: 1
             datasource: Prometheus
           postgres-cnpg:
-            gnetId: 16117
+            gnetId: 13115
             revision: 1
             datasource: Prometheus
           redis-dragonfly:
-            gnetId: 19114
+            gnetId: 11835
             revision: 1
             datasource: Prometheus
           cert-manager:
-            gnetId: 20314
+            gnetId: 20842
             revision: 1
             datasource: Prometheus
-          envoy-gateway:
-            gnetId: 19219
+          envoy-overview:
+            gnetId: 24459
+            revision: 1
+            datasource: Prometheus
+          envoy-upstream:
+            gnetId: 24457
+            revision: 1
+            datasource: Prometheus
+          envoy-downstream:
+            gnetId: 24458
             revision: 1
             datasource: Prometheus
     alertmanager:
