@@ -101,6 +101,34 @@ spec:
             gnetId: 12114
             revision: 1
             datasource: Prometheus
+          paperless:
+            gnetId: 14140
+            revision: 1
+            datasource: Prometheus
+          authentik:
+            gnetId: 15357
+            revision: 1
+            datasource: Prometheus
+          nextcloud:
+            gnetId: 15759
+            revision: 1
+            datasource: Prometheus
+          postgres-cnpg:
+            gnetId: 16117
+            revision: 1
+            datasource: Prometheus
+          redis-dragonfly:
+            gnetId: 19114
+            revision: 1
+            datasource: Prometheus
+          cert-manager:
+            gnetId: 20314
+            revision: 1
+            datasource: Prometheus
+          envoy-gateway:
+            gnetId: 19219
+            revision: 1
+            datasource: Prometheus
     alertmanager:
       enabled: true
       alertmanagerSpec:
