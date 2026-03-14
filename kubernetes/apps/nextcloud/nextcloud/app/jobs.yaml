@@ -21,7 +21,7 @@ spec:
         runAsGroup: 82
         fsGroup: 82
       initContainers:
-      - name: wait-for-redis-lock
+      - name: wait-for-redis-lock-v01
         image: public.ecr.aws/docker/library/redis:7.2-alpine
         command: ['sh', '-c']
         args:
@@ -78,7 +78,7 @@ spec:
               name: nextcloud-secret
               key: REDIS_PASSWORD
       containers:
-      - name: nextcloud-job-config-postinstall
+      - name: nextcloud-job-config-postinstall-v01
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
         command: ["/bin/sh", "-ec"]
         args:
@@ -164,7 +164,7 @@ spec:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: nextcloud-cronjob-ai-worker-v2
+  name: nextcloud-cronjob-ai-worker-v01
 spec:
   schedule: "*/1 * * * *"
   concurrencyPolicy: Forbid
@@ -197,20 +197,34 @@ spec:
             args:
             - |
               set -eu
-              JOB_MARKER="/var/www/html/config/.nextcloud-postinstall-done"
+              CONFIG_DIR="/var/www/html/config"
               timeout=300
 
-              # Wait for init job to complete
+              # Wait for all config jobs to complete
               elapsed=0
               max_wait=3600
-              while [ ! -f "$JOB_MARKER" ] && [ "$elapsed" -lt "$max_wait" ]; do
-                echo "Waiting for init job to complete..."
+              markers=".nextcloud-oidc-done .nextcloud-richdocuments-done .nextcloud-ai-done .nextcloud-whiteboard-done"
+
+              while [ "$elapsed" -lt "$max_wait" ]; do
+                all_done=true
+                for marker in $markers; do
+                  if [ ! -f "$CONFIG_DIR/$marker" ]; then
+                    all_done=false
+                    break
+                  fi
+                done
+
+                if [ "$all_done" = "true" ]; then
+                  break
+                fi
+
+                echo "Waiting for config jobs to complete..."
                 sleep 10
                 elapsed=$((elapsed + 10))
               done
 
-              if [ ! -f "$JOB_MARKER" ]; then
-                echo "Init job did not complete within timeout, aborting"
+              if [ "$all_done" != "true" ]; then
+                echo "Config jobs did not complete within timeout, aborting"
                 exit 1
               fi
 
@@ -275,7 +289,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-addapps-v4
+  name: nextcloud-job-config-addapps-v01
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -295,6 +309,28 @@ spec:
         runAsGroup: 82
         fsGroup: 82
       initContainers:
+      - name: wait-for-postinstall
+        image: public.ecr.aws/docker/library/busybox:1.36
+        command: ['sh', '-c']
+        args:
+        - |
+          MARKER="/var/www/html/config/.nextcloud-postinstall-done"
+          TIMEOUT=3600
+          elapsed=0
+          until [ -f "$MARKER" ]; do
+            echo "Waiting for postinstall to complete..."
+            sleep 10
+            elapsed=$((elapsed + 10))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Timed out waiting for postinstall marker"
+              exit 1
+            fi
+          done
+          echo "Postinstall marker found, proceeding"
+        volumeMounts:
+        - name: app-main
+          mountPath: /var/www/html/config
+          subPath: config
       - name: wait-for-redis-lock
         image: public.ecr.aws/docker/library/redis:7.2-alpine
         command: ['sh', '-c']
@@ -456,7 +492,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-oidc-v7
+  name: nextcloud-job-config-oidc-v01
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -476,6 +512,28 @@ spec:
         runAsGroup: 82
         fsGroup: 82
       initContainers:
+      - name: wait-for-addapps
+        image: public.ecr.aws/docker/library/busybox:1.36
+        command: ['sh', '-c']
+        args:
+        - |
+          MARKER="/var/www/html/config/.nextcloud-addapps-done"
+          TIMEOUT=3600
+          elapsed=0
+          until [ -f "$MARKER" ]; do
+            echo "Waiting for addapps to complete..."
+            sleep 10
+            elapsed=$((elapsed + 10))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Timed out waiting for addapps marker"
+              exit 1
+            fi
+          done
+          echo "Addapps marker found, proceeding"
+        volumeMounts:
+        - name: app-main
+          mountPath: /var/www/html/config
+          subPath: config
       - name: wait-for-redis-lock
         image: public.ecr.aws/docker/library/redis:7.2-alpine
         command: ['sh', '-c']
@@ -642,7 +700,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-richdocuments-v3
+  name: nextcloud-job-config-richdocuments-v01
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -662,6 +720,28 @@ spec:
         runAsGroup: 82
         fsGroup: 82
       initContainers:
+      - name: wait-for-addapps
+        image: public.ecr.aws/docker/library/busybox:1.36
+        command: ['sh', '-c']
+        args:
+        - |
+          MARKER="/var/www/html/config/.nextcloud-addapps-done"
+          TIMEOUT=3600
+          elapsed=0
+          until [ -f "$MARKER" ]; do
+            echo "Waiting for addapps to complete..."
+            sleep 10
+            elapsed=$((elapsed + 10))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Timed out waiting for addapps marker"
+              exit 1
+            fi
+          done
+          echo "Addapps marker found, proceeding"
+        volumeMounts:
+        - name: app-main
+          mountPath: /var/www/html/config
+          subPath: config
       - name: wait-for-redis-lock
         image: public.ecr.aws/docker/library/redis:7.2-alpine
         command: ['sh', '-c']
@@ -814,7 +894,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-ai-v2
+  name: nextcloud-job-config-ai-v01
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -834,6 +914,28 @@ spec:
         runAsGroup: 82
         fsGroup: 82
       initContainers:
+      - name: wait-for-addapps
+        image: public.ecr.aws/docker/library/busybox:1.36
+        command: ['sh', '-c']
+        args:
+        - |
+          MARKER="/var/www/html/config/.nextcloud-addapps-done"
+          TIMEOUT=3600
+          elapsed=0
+          until [ -f "$MARKER" ]; do
+            echo "Waiting for addapps to complete..."
+            sleep 10
+            elapsed=$((elapsed + 10))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Timed out waiting for addapps marker"
+              exit 1
+            fi
+          done
+          echo "Addapps marker found, proceeding"
+        volumeMounts:
+        - name: app-main
+          mountPath: /var/www/html/config
+          subPath: config
       - name: wait-for-redis-lock
         image: public.ecr.aws/docker/library/redis:7.2-alpine
         command: ['sh', '-c']
@@ -1026,7 +1128,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-whiteboard
+  name: nextcloud-job-config-whiteboard-v01
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -1046,6 +1148,28 @@ spec:
         runAsGroup: 82
         fsGroup: 82
       initContainers:
+      - name: wait-for-addapps
+        image: public.ecr.aws/docker/library/busybox:1.36
+        command: ['sh', '-c']
+        args:
+        - |
+          MARKER="/var/www/html/config/.nextcloud-addapps-done"
+          TIMEOUT=3600
+          elapsed=0
+          until [ -f "$MARKER" ]; do
+            echo "Waiting for addapps to complete..."
+            sleep 10
+            elapsed=$((elapsed + 10))
+            if [ "$elapsed" -ge "$TIMEOUT" ]; then
+              echo "Timed out waiting for addapps marker"
+              exit 1
+            fi
+          done
+          echo "Addapps marker found, proceeding"
+        volumeMounts:
+        - name: app-main
+          mountPath: /var/www/html/config
+          subPath: config
       - name: wait-for-redis-lock
         image: public.ecr.aws/docker/library/redis:7.2-alpine
         command: ['sh', '-c']
@@ -1103,7 +1227,7 @@ spec:
               name: nextcloud-secret
               key: REDIS_PASSWORD
       containers:
-      - name: nextcloud-job-config-whiteboard
+      - name: nextcloud-job-config-whiteboard-v1
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
         command: ["/bin/sh", "-ec"]
         args:
