@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-postinstall-v3
+  name: nextcloud-job-config-postinstall-v4
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -164,7 +164,7 @@ spec:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: nextcloud-cronjob-ai-worker-v1
+  name: nextcloud-cronjob-ai-worker-v2
 spec:
   schedule: "*/1 * * * *"
   concurrencyPolicy: Forbid
@@ -275,7 +275,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-addapps-v3
+  name: nextcloud-job-config-addapps-v4
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -456,7 +456,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-oidc-v6
+  name: nextcloud-job-config-oidc-v7
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
