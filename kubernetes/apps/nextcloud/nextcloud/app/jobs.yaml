@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-postinstall-v4
+  name: nextcloud-job-config-postinstall-v1.0.0
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -20,63 +20,6 @@ spec:
         runAsUser: 82
         runAsGroup: 82
         fsGroup: 82
-      initContainers:
-      - name: wait-for-redis-lock-v01
-        image: public.ecr.aws/docker/library/redis:7.2-alpine
-        command: ['sh', '-c']
-        args:
-        - |
-          set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
-          LOCK_VALUE="job-$$-$(date +%s)"
-          TIMEOUT=3600
-          LOCK_TTL=1800
-          elapsed=0
-
-          # Wait for Redis to be ready
-          until redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" ping >/dev/null 2>&1; do
-            echo "Waiting for Redis..."
-            sleep 2
-            elapsed=$((elapsed + 2))
-            if [ "$elapsed" -ge 60 ]; then
-              echo "Redis not responding after 60 seconds"
-              exit 1
-            fi
-          done
-
-          elapsed=0
-          # Try to acquire lock with exponential backoff
-          while true; do
-            # Try to acquire lock (only succeeds if key doesn't exist)
-            LOCK_ACQUIRED=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" \
-              SET "$LOCK_KEY" "$LOCK_VALUE" EX "$LOCK_TTL" NX)
-
-            if [ "$LOCK_ACQUIRED" = "OK" ]; then
-              echo "Lock acquired by $$ at $(date)"
-              break
-            fi
-
-            # Lock exists, wait before retrying
-            WAIT_TIME=$((5 + (elapsed / 300)))
-            [ "$WAIT_TIME" -gt 30 ] && WAIT_TIME=30
-            echo "Lock held by another job, waiting ${WAIT_TIME}s..."
-            sleep "$WAIT_TIME"
-            elapsed=$((elapsed + WAIT_TIME))
-
-            if [ "$elapsed" -ge "$TIMEOUT" ]; then
-              echo "Lock timeout waiting for other jobs after ${elapsed}s"
-              exit 1
-            fi
-          done
-        env:
-        - name: NEXTCLOUD_REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: nextcloud-secret
-              key: REDIS_PASSWORD
       containers:
       - name: nextcloud-job-config-postinstall-v01
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -84,10 +27,6 @@ spec:
         args:
         - |
           set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
           JOB_MARKER="/var/www/html/config/.nextcloud-postinstall-done"
 
           # Idempotency check
@@ -95,8 +34,6 @@ spec:
             echo "Setup already completed, skipping"
             exit 0
           fi
-
-          trap 'redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" DEL "$LOCK_KEY" 2>/dev/null || true; echo "Lock released"' EXIT
 
           timeout=1800
 
@@ -164,7 +101,7 @@ spec:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: nextcloud-cronjob-ai-worker-v01
+  name: nextcloud-cronjob-ai-worker-v1.0.0
 spec:
   schedule: "*/1 * * * *"
   concurrencyPolicy: Forbid
@@ -200,33 +137,20 @@ spec:
               CONFIG_DIR="/var/www/html/config"
               timeout=300
 
-              # Wait for all config jobs to complete
+              # Wait for final config job to complete
+              MARKER="$CONFIG_DIR/.nextcloud-whiteboard-done"
               elapsed=0
               max_wait=3600
-              markers=".nextcloud-oidc-done .nextcloud-richdocuments-done .nextcloud-ai-done .nextcloud-whiteboard-done"
-
-              while [ "$elapsed" -lt "$max_wait" ]; do
-                all_done=true
-                for marker in $markers; do
-                  if [ ! -f "$CONFIG_DIR/$marker" ]; then
-                    all_done=false
-                    break
-                  fi
-                done
-
-                if [ "$all_done" = "true" ]; then
-                  break
-                fi
-
-                echo "Waiting for config jobs to complete..."
+              until [ -f "$MARKER" ]; do
+                echo "Waiting for all config jobs to complete..."
                 sleep 10
                 elapsed=$((elapsed + 10))
+                if [ "$elapsed" -ge "$max_wait" ]; then
+                  echo "Config jobs did not complete within timeout, aborting"
+                  exit 1
+                fi
               done
-
-              if [ "$all_done" != "true" ]; then
-                echo "Config jobs did not complete within timeout, aborting"
-                exit 1
-              fi
+              echo "All config jobs completed, proceeding"
 
               wait_installed_and_ready() {
                 elapsed=0
@@ -289,7 +213,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-addapps-v01
+  name: nextcloud-job-config-addapps-v1.0.0
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -331,62 +255,6 @@ spec:
         - name: app-main
           mountPath: /var/www/html/config
           subPath: config
-      - name: wait-for-redis-lock
-        image: public.ecr.aws/docker/library/redis:7.2-alpine
-        command: ['sh', '-c']
-        args:
-        - |
-          set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
-          LOCK_VALUE="job-$$-$(date +%s)"
-          TIMEOUT=3600
-          LOCK_TTL=1800
-          elapsed=0
-
-          # Wait for Redis to be ready
-          until redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" ping >/dev/null 2>&1; do
-            echo "Waiting for Redis..."
-            sleep 2
-            elapsed=$((elapsed + 2))
-            if [ "$elapsed" -ge 60 ]; then
-              echo "Redis not responding after 60 seconds"
-              exit 1
-            fi
-          done
-
-          elapsed=0
-          # Try to acquire lock with exponential backoff
-          while true; do
-            # Try to acquire lock (only succeeds if key doesn't exist)
-            LOCK_ACQUIRED=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" \
-              SET "$LOCK_KEY" "$LOCK_VALUE" EX "$LOCK_TTL" NX)
-
-            if [ "$LOCK_ACQUIRED" = "OK" ]; then
-              echo "Lock acquired by $$ at $(date)"
-              break
-            fi
-
-            # Lock exists, wait before retrying
-            WAIT_TIME=$((5 + (elapsed / 300)))
-            [ "$WAIT_TIME" -gt 30 ] && WAIT_TIME=30
-            echo "Lock held by another job, waiting ${WAIT_TIME}s..."
-            sleep "$WAIT_TIME"
-            elapsed=$((elapsed + WAIT_TIME))
-
-            if [ "$elapsed" -ge "$TIMEOUT" ]; then
-              echo "Lock timeout waiting for other jobs after ${elapsed}s"
-              exit 1
-            fi
-          done
-        env:
-        - name: NEXTCLOUD_REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: nextcloud-secret
-              key: REDIS_PASSWORD
       containers:
       - name: nextcloud-job-config-addapps
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -394,10 +262,6 @@ spec:
         args:
         - |
           set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
           JOB_MARKER="/var/www/html/config/.nextcloud-addapps-done"
 
           # Idempotency check
@@ -405,8 +269,6 @@ spec:
             echo "App installation already completed, skipping"
             exit 0
           fi
-
-          trap 'redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" DEL "$LOCK_KEY" 2>/dev/null || true; echo "Lock released"' EXIT
 
           timeout=7200
 
@@ -492,7 +354,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-oidc-v01
+  name: nextcloud-job-config-oidc-v1.0.0
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -534,62 +396,6 @@ spec:
         - name: app-main
           mountPath: /var/www/html/config
           subPath: config
-      - name: wait-for-redis-lock
-        image: public.ecr.aws/docker/library/redis:7.2-alpine
-        command: ['sh', '-c']
-        args:
-        - |
-          set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
-          LOCK_VALUE="job-$$-$(date +%s)"
-          TIMEOUT=3600
-          LOCK_TTL=1800
-          elapsed=0
-
-          # Wait for Redis to be ready
-          until redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" ping >/dev/null 2>&1; do
-            echo "Waiting for Redis..."
-            sleep 2
-            elapsed=$((elapsed + 2))
-            if [ "$elapsed" -ge 60 ]; then
-              echo "Redis not responding after 60 seconds"
-              exit 1
-            fi
-          done
-
-          elapsed=0
-          # Try to acquire lock with exponential backoff
-          while true; do
-            # Try to acquire lock (only succeeds if key doesn't exist)
-            LOCK_ACQUIRED=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" \
-              SET "$LOCK_KEY" "$LOCK_VALUE" EX "$LOCK_TTL" NX)
-
-            if [ "$LOCK_ACQUIRED" = "OK" ]; then
-              echo "Lock acquired by $$ at $(date)"
-              break
-            fi
-
-            # Lock exists, wait before retrying
-            WAIT_TIME=$((5 + (elapsed / 300)))
-            [ "$WAIT_TIME" -gt 30 ] && WAIT_TIME=30
-            echo "Lock held by another job, waiting ${WAIT_TIME}s..."
-            sleep "$WAIT_TIME"
-            elapsed=$((elapsed + WAIT_TIME))
-
-            if [ "$elapsed" -ge "$TIMEOUT" ]; then
-              echo "Lock timeout waiting for other jobs after ${elapsed}s"
-              exit 1
-            fi
-          done
-        env:
-        - name: NEXTCLOUD_REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: nextcloud-secret
-              key: REDIS_PASSWORD
       containers:
       - name: nextcloud-job-config-oidc
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -597,10 +403,6 @@ spec:
         args:
         - |
           set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
           JOB_MARKER="/var/www/html/config/.nextcloud-oidc-done"
 
           # Idempotency check
@@ -608,8 +410,6 @@ spec:
             echo "OIDC configuration already completed, skipping"
             exit 0
           fi
-
-          trap 'redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" DEL "$LOCK_KEY" 2>/dev/null || true; echo "Lock released"' EXIT
 
           timeout=7200
 
@@ -700,7 +500,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-richdocuments-v01
+  name: nextcloud-job-config-richdocuments-v1.0.0
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -720,84 +520,28 @@ spec:
         runAsGroup: 82
         fsGroup: 82
       initContainers:
-      - name: wait-for-addapps
+      - name: wait-for-oidc
         image: public.ecr.aws/docker/library/busybox:1.36
         command: ['sh', '-c']
         args:
         - |
-          MARKER="/var/www/html/config/.nextcloud-addapps-done"
+          MARKER="/var/www/html/config/.nextcloud-oidc-done"
           TIMEOUT=3600
           elapsed=0
           until [ -f "$MARKER" ]; do
-            echo "Waiting for addapps to complete..."
+            echo "Waiting for oidc to complete..."
             sleep 10
             elapsed=$((elapsed + 10))
             if [ "$elapsed" -ge "$TIMEOUT" ]; then
-              echo "Timed out waiting for addapps marker"
+              echo "Timed out waiting for oidc marker"
               exit 1
             fi
           done
-          echo "Addapps marker found, proceeding"
+          echo "Oidc marker found, proceeding"
         volumeMounts:
         - name: app-main
           mountPath: /var/www/html/config
           subPath: config
-      - name: wait-for-redis-lock
-        image: public.ecr.aws/docker/library/redis:7.2-alpine
-        command: ['sh', '-c']
-        args:
-        - |
-          set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
-          LOCK_VALUE="job-$$-$(date +%s)"
-          TIMEOUT=3600
-          LOCK_TTL=1800
-          elapsed=0
-
-          # Wait for Redis to be ready
-          until redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" ping >/dev/null 2>&1; do
-            echo "Waiting for Redis..."
-            sleep 2
-            elapsed=$((elapsed + 2))
-            if [ "$elapsed" -ge 60 ]; then
-              echo "Redis not responding after 60 seconds"
-              exit 1
-            fi
-          done
-
-          elapsed=0
-          # Try to acquire lock with exponential backoff
-          while true; do
-            # Try to acquire lock (only succeeds if key doesn't exist)
-            LOCK_ACQUIRED=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" \
-              SET "$LOCK_KEY" "$LOCK_VALUE" EX "$LOCK_TTL" NX)
-
-            if [ "$LOCK_ACQUIRED" = "OK" ]; then
-              echo "Lock acquired by $$ at $(date)"
-              break
-            fi
-
-            # Lock exists, wait before retrying
-            WAIT_TIME=$((5 + (elapsed / 300)))
-            [ "$WAIT_TIME" -gt 30 ] && WAIT_TIME=30
-            echo "Lock held by another job, waiting ${WAIT_TIME}s..."
-            sleep "$WAIT_TIME"
-            elapsed=$((elapsed + WAIT_TIME))
-
-            if [ "$elapsed" -ge "$TIMEOUT" ]; then
-              echo "Lock timeout waiting for other jobs after ${elapsed}s"
-              exit 1
-            fi
-          done
-        env:
-        - name: NEXTCLOUD_REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: nextcloud-secret
-              key: REDIS_PASSWORD
       containers:
       - name: nextcloud-job-config-richdocuments
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -805,10 +549,6 @@ spec:
         args:
         - |
           set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
           JOB_MARKER="/var/www/html/config/.nextcloud-richdocuments-done"
 
           # Idempotency check
@@ -816,8 +556,6 @@ spec:
             echo "Richdocuments configuration already completed, skipping"
             exit 0
           fi
-
-          trap 'redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" DEL "$LOCK_KEY" 2>/dev/null || true; echo "Lock released"' EXIT
 
           timeout=7200
 
@@ -894,7 +632,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-ai-v01
+  name: nextcloud-job-config-ai-v1.0.0
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -914,84 +652,28 @@ spec:
         runAsGroup: 82
         fsGroup: 82
       initContainers:
-      - name: wait-for-addapps
+      - name: wait-for-richdocuments
         image: public.ecr.aws/docker/library/busybox:1.36
         command: ['sh', '-c']
         args:
         - |
-          MARKER="/var/www/html/config/.nextcloud-addapps-done"
+          MARKER="/var/www/html/config/.nextcloud-richdocuments-done"
           TIMEOUT=3600
           elapsed=0
           until [ -f "$MARKER" ]; do
-            echo "Waiting for addapps to complete..."
+            echo "Waiting for richdocuments to complete..."
             sleep 10
             elapsed=$((elapsed + 10))
             if [ "$elapsed" -ge "$TIMEOUT" ]; then
-              echo "Timed out waiting for addapps marker"
+              echo "Timed out waiting for richdocuments marker"
               exit 1
             fi
           done
-          echo "Addapps marker found, proceeding"
+          echo "Richdocuments marker found, proceeding"
         volumeMounts:
         - name: app-main
           mountPath: /var/www/html/config
           subPath: config
-      - name: wait-for-redis-lock
-        image: public.ecr.aws/docker/library/redis:7.2-alpine
-        command: ['sh', '-c']
-        args:
-        - |
-          set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
-          LOCK_VALUE="job-$$-$(date +%s)"
-          TIMEOUT=3600
-          LOCK_TTL=1800
-          elapsed=0
-
-          # Wait for Redis to be ready
-          until redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" ping >/dev/null 2>&1; do
-            echo "Waiting for Redis..."
-            sleep 2
-            elapsed=$((elapsed + 2))
-            if [ "$elapsed" -ge 60 ]; then
-              echo "Redis not responding after 60 seconds"
-              exit 1
-            fi
-          done
-
-          elapsed=0
-          # Try to acquire lock with exponential backoff
-          while true; do
-            # Try to acquire lock (only succeeds if key doesn't exist)
-            LOCK_ACQUIRED=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" \
-              SET "$LOCK_KEY" "$LOCK_VALUE" EX "$LOCK_TTL" NX)
-
-            if [ "$LOCK_ACQUIRED" = "OK" ]; then
-              echo "Lock acquired by $$ at $(date)"
-              break
-            fi
-
-            # Lock exists, wait before retrying
-            WAIT_TIME=$((5 + (elapsed / 300)))
-            [ "$WAIT_TIME" -gt 30 ] && WAIT_TIME=30
-            echo "Lock held by another job, waiting ${WAIT_TIME}s..."
-            sleep "$WAIT_TIME"
-            elapsed=$((elapsed + WAIT_TIME))
-
-            if [ "$elapsed" -ge "$TIMEOUT" ]; then
-              echo "Lock timeout waiting for other jobs after ${elapsed}s"
-              exit 1
-            fi
-          done
-        env:
-        - name: NEXTCLOUD_REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: nextcloud-secret
-              key: REDIS_PASSWORD
       containers:
       - name: nextcloud-job-config-ai
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -999,10 +681,6 @@ spec:
         args:
         - |
           set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
           JOB_MARKER="/var/www/html/config/.nextcloud-ai-done"
 
           # Idempotency check
@@ -1010,8 +688,6 @@ spec:
             echo "AI configuration already completed, skipping"
             exit 0
           fi
-
-          trap 'redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" DEL "$LOCK_KEY" 2>/dev/null || true; echo "Lock released"' EXIT
 
           timeout=7200
 
@@ -1128,7 +804,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: nextcloud-job-config-whiteboard-v01
+  name: nextcloud-job-config-whiteboard-v1.0.0
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 2
@@ -1148,84 +824,28 @@ spec:
         runAsGroup: 82
         fsGroup: 82
       initContainers:
-      - name: wait-for-addapps
+      - name: wait-for-ai
         image: public.ecr.aws/docker/library/busybox:1.36
         command: ['sh', '-c']
         args:
         - |
-          MARKER="/var/www/html/config/.nextcloud-addapps-done"
+          MARKER="/var/www/html/config/.nextcloud-ai-done"
           TIMEOUT=3600
           elapsed=0
           until [ -f "$MARKER" ]; do
-            echo "Waiting for addapps to complete..."
+            echo "Waiting for ai to complete..."
             sleep 10
             elapsed=$((elapsed + 10))
             if [ "$elapsed" -ge "$TIMEOUT" ]; then
-              echo "Timed out waiting for addapps marker"
+              echo "Timed out waiting for ai marker"
               exit 1
             fi
           done
-          echo "Addapps marker found, proceeding"
+          echo "Ai marker found, proceeding"
         volumeMounts:
         - name: app-main
           mountPath: /var/www/html/config
           subPath: config
-      - name: wait-for-redis-lock
-        image: public.ecr.aws/docker/library/redis:7.2-alpine
-        command: ['sh', '-c']
-        args:
-        - |
-          set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
-          LOCK_VALUE="job-$$-$(date +%s)"
-          TIMEOUT=3600
-          LOCK_TTL=1800
-          elapsed=0
-
-          # Wait for Redis to be ready
-          until redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" ping >/dev/null 2>&1; do
-            echo "Waiting for Redis..."
-            sleep 2
-            elapsed=$((elapsed + 2))
-            if [ "$elapsed" -ge 60 ]; then
-              echo "Redis not responding after 60 seconds"
-              exit 1
-            fi
-          done
-
-          elapsed=0
-          # Try to acquire lock with exponential backoff
-          while true; do
-            # Try to acquire lock (only succeeds if key doesn't exist)
-            LOCK_ACQUIRED=$(redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" \
-              SET "$LOCK_KEY" "$LOCK_VALUE" EX "$LOCK_TTL" NX)
-
-            if [ "$LOCK_ACQUIRED" = "OK" ]; then
-              echo "Lock acquired by $$ at $(date)"
-              break
-            fi
-
-            # Lock exists, wait before retrying
-            WAIT_TIME=$((5 + (elapsed / 300)))
-            [ "$WAIT_TIME" -gt 30 ] && WAIT_TIME=30
-            echo "Lock held by another job, waiting ${WAIT_TIME}s..."
-            sleep "$WAIT_TIME"
-            elapsed=$((elapsed + WAIT_TIME))
-
-            if [ "$elapsed" -ge "$TIMEOUT" ]; then
-              echo "Lock timeout waiting for other jobs after ${elapsed}s"
-              exit 1
-            fi
-          done
-        env:
-        - name: NEXTCLOUD_REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: nextcloud-secret
-              key: REDIS_PASSWORD
       containers:
       - name: nextcloud-job-config-whiteboard-v1
         image: public.ecr.aws/docker/library/nextcloud:32.0.6-fpm-alpine
@@ -1233,10 +853,6 @@ spec:
         args:
         - |
           set -eu
-          REDIS_HOST="dragonfly.database.svc.cluster.local"
-          REDIS_PORT="6379"
-          REDIS_DB="2"
-          LOCK_KEY="nextcloud:config:job:lock"
           JOB_MARKER="/var/www/html/config/.nextcloud-whiteboard-done"
 
           # Idempotency check
@@ -1244,8 +860,6 @@ spec:
             echo "Whiteboard configuration already completed, skipping"
             exit 0
           fi
-
-          trap 'redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$NEXTCLOUD_REDIS_PASSWORD" -n "$REDIS_DB" DEL "$LOCK_KEY" 2>/dev/null || true; echo "Lock released"' EXIT
 
           timeout=7200
 
