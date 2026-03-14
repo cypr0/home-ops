@@ -197,27 +197,22 @@ spec:
             args:
             - |
               set -eu
-              REDIS_HOST="dragonfly.database.svc.cluster.local"
-              REDIS_PORT="6379"
-              REDIS_DB="2"
-                  LOCK_KEY="nextcloud:config:job:lock"
+              JOB_MARKER="/var/www/html/config/.nextcloud-postinstall-done"
               timeout=300
 
-              # Check if config jobs are running (non-blocking for ai-worker)
-              check_config_lock() {
-                redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$REDIS_PASS" -n "$REDIS_DB" \
-                  EXISTS "$LOCK_KEY" 2>/dev/null || echo "0"
-              }
-
-              # Wait briefly if lock exists, then proceed anyway
-              WAIT_FOR_LOCK=10
+              # Wait for init job to complete
               elapsed=0
-              while [ "$(check_config_lock)" = "1" ] && [ "$elapsed" -lt "$WAIT_FOR_LOCK" ]; do
-                echo "Config job lock detected, waiting ${WAIT_FOR_LOCK}s max (elapsed: ${elapsed}s)..."
-                sleep 1
-                elapsed=$((elapsed + 1))
+              max_wait=3600
+              while [ ! -f "$JOB_MARKER" ] && [ "$elapsed" -lt "$max_wait" ]; do
+                echo "Waiting for init job to complete..."
+                sleep 10
+                elapsed=$((elapsed + 10))
               done
-              [ "$(check_config_lock)" = "1" ] && echo "Lock still exists but proceeding anyway (timeout: ${WAIT_FOR_LOCK}s)"
+
+              if [ ! -f "$JOB_MARKER" ]; then
+                echo "Init job did not complete within timeout, aborting"
+                exit 1
+              fi
 
               wait_installed_and_ready() {
                 elapsed=0
