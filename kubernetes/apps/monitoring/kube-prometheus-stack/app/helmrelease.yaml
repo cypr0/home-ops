@@ -30,7 +30,8 @@ spec:
   values:
     prometheus:
       prometheusSpec:
-        retention: 15d
+        retention: 14d
+        retentionSize: "12Gi"
         storageSpec:
           volumeClaimTemplate:
             spec:
