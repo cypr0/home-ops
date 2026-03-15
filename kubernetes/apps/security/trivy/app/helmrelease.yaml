@@ -30,6 +30,8 @@ spec:
         admission:
           enabled: true
       logLevel: info
+      # Scan all namespaces in the cluster
+      namespaceSelector: {}
     trivy:
       image:
         registry: ghcr.io
