@@ -34,19 +34,19 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: longhorn-standard
+              storageClassName: longhorn-basic
               resources:
                 requests:
-                  storage: 20Gi
+                  storage: 15Gi
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false
         resources:
           requests:
-            cpu: 250m
+            cpu: 100m
             memory: 512Mi
           limits:
-            cpu: 1000m
+            cpu: 500m
             memory: 2Gi
     grafana:
       enabled: true
@@ -112,6 +112,13 @@ spec:
     alertmanager:
       enabled: true
       alertmanagerSpec:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 100m
+            memory: 256Mi
         storage:
           volumeClaimTemplate:
             spec:
